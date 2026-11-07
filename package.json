@@ -1,0 +1,10 @@
+{
+  "name": "smart-fuel",
+  "private": true,
+  "version": "5.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs"
+  },
+  "engines": { "node": ">=18" }
+}

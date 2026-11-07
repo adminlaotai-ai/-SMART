@@ -1,7 +1,9 @@
 // ສ້າງ public/ ສຳລັບ Vercel ຈາກ apps-script/Index.html (ໄຟລ໌ດຽວກັນກັບທີ່ໃຊ້ໃນ Apps Script)
 import { mkdirSync, readFileSync, writeFileSync, copyFileSync } from 'node:fs';
 
-const url = (process.env.GAS_WEB_APP_URL || '').trim();
+// URL ຂອງ Apps Script Web App (ປ່ຽນໄດ້ດ້ວຍ Environment Variable GAS_WEB_APP_URL ໃນ Vercel)
+const DEFAULT_GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxi1ckv0Jj1A1irTzXBjXrfxSO4VRHHkpM3to2ZR29cLY8X2vc7AUg_gTMjBJQz1grH2g/exec';
+const url = (process.env.GAS_WEB_APP_URL || DEFAULT_GAS_WEB_APP_URL).trim();
 if (!url) console.warn('⚠️  GAS_WEB_APP_URL ບໍ່ໄດ້ຕັ້ງ — ໜ້າເວັບຈະເປີດໄດ້ ແຕ່ເອີ້ນເຊີບເວີບໍ່ໄດ້');
 
 mkdirSync('public', { recursive: true });

@@ -1,5 +1,5 @@
 // ສ້າງ public/ ສຳລັບ Vercel ຈາກ apps-script/Index.html (ໄຟລ໌ດຽວກັນກັບທີ່ໃຊ້ໃນ Apps Script)
-import { mkdirSync, readFileSync, writeFileSync, copyFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync, cpSync } from 'node:fs';
 
 // URL ຂອງ Apps Script Web App (ປ່ຽນໄດ້ດ້ວຍ Environment Variable GAS_WEB_APP_URL ໃນ Vercel)
 const DEFAULT_GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxi1ckv0Jj1A1irTzXBjXrfxSO4VRHHkpM3to2ZR29cLY8X2vc7AUg_gTMjBJQz1grH2g/exec';
@@ -8,9 +8,18 @@ if (!url) console.warn('⚠️  GAS_WEB_APP_URL ບໍ່ໄດ້ຕັ້ງ �
 
 mkdirSync('public', { recursive: true });
 const html = readFileSync('apps-script/Index.html', 'utf8');
-const inject = '\n  <script src="/config.js"></script>\n  <script src="/gas-bridge.js"></script>';
+const inject = '\n  <script src="/config.js"></script>\n  <script src="/gas-bridge.js"></script>' +
+  '\n  <link rel="manifest" href="/manifest.webmanifest">' +
+  '\n  <meta name="theme-color" content="#1a365d">' +
+  '\n  <meta name="apple-mobile-web-app-capable" content="yes">' +
+  '\n  <meta name="mobile-web-app-capable" content="yes">' +
+  '\n  <meta name="apple-mobile-web-app-title" content="SMART Fuel">' +
+  '\n  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">' +
+  '\n  <link rel="icon" type="image/png" href="/icons/favicon-32.png">' +
+  '\n  <script src="/pwa.js" defer></script>';
 if (!/<head>/i.test(html)) throw new Error('Index.html ບໍ່ມີ <head>');
 writeFileSync('public/index.html', html.replace(/<head>/i, (m) => m + inject));
 writeFileSync('public/config.js', 'window.SMART_CONFIG = ' + JSON.stringify({ GAS_WEB_APP_URL: url }) + ';\n');
-copyFileSync('web/gas-bridge.js', 'public/gas-bridge.js');
+// gas-bridge.js, pwa.js, sw.js, manifest ແລະ icons
+cpSync('web', 'public', { recursive: true });
 console.log('✅ Built public/ (GAS_WEB_APP_URL ' + (url ? 'set' : 'MISSING') + ')');

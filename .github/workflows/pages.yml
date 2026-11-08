@@ -30,7 +30,7 @@ jobs:
         env:
           GAS_WEB_APP_URL: ${{ vars.GAS_WEB_APP_URL }}
       # Pages ຢູ່ໃນໂຟລເດີ /-SMART/ — ປ່ຽນ path ສະຄຣິບເປັນແບບ relative ສະເພາະສຳລັບ Pages
-      - run: sed -i 's#src="/config.js"#src="config.js"#; s#src="/gas-bridge.js"#src="gas-bridge.js"#' public/index.html
+      - run: sed -i -E 's#(src|href)="/([^/"])#\1="\2#g' public/index.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -8,7 +8,7 @@ if (!url) console.warn('⚠️  GAS_WEB_APP_URL ບໍ່ໄດ້ຕັ້ງ �
 
 mkdirSync('public', { recursive: true });
 const html = readFileSync('apps-script/Index.html', 'utf8');
-const inject = '\n  <script src="config.js"></script>\n  <script src="gas-bridge.js"></script>';
+const inject = '\n  <script src="/config.js"></script>\n  <script src="/gas-bridge.js"></script>';
 if (!/<head>/i.test(html)) throw new Error('Index.html ບໍ່ມີ <head>');
 writeFileSync('public/index.html', html.replace(/<head>/i, (m) => m + inject));
 writeFileSync('public/config.js', 'window.SMART_CONFIG = ' + JSON.stringify({ GAS_WEB_APP_URL: url }) + ';\n');

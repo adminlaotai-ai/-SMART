@@ -2,7 +2,7 @@
 import { mkdirSync, readFileSync, writeFileSync, cpSync } from 'node:fs';
 
 // URL ຂອງ Apps Script Web App (ປ່ຽນໄດ້ດ້ວຍ Environment Variable GAS_WEB_APP_URL ໃນ Vercel)
-const DEFAULT_GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxi1ckv0Jj1A1irTzXBjXrfxSO4VRHHkpM3to2ZR29cLY8X2vc7AUg_gTMjBJQz1grH2g/exec';
+const DEFAULT_GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzSf5ip8sb39GpF8ynKberQk5XGQGMJmGrdSk2sA1nxuU6K5UExUej_Pyns46zXebRPDw/exec';
 const url = (process.env.GAS_WEB_APP_URL || DEFAULT_GAS_WEB_APP_URL).trim();
 if (!url) console.warn('⚠️  GAS_WEB_APP_URL ບໍ່ໄດ້ຕັ້ງ — ໜ້າເວັບຈະເປີດໄດ້ ແຕ່ເອີ້ນເຊີບເວີບໍ່ໄດ້');
 

@@ -2237,6 +2237,7 @@
             <div class="mt-card" style="--c:#2ecc71"><div class="t">ວົງເງິນອະນຸມັດເດືອນນີ້ (ກີບ)</div><div class="v" id="mtPCAmt">–</div><div class="s" id="mtPCAmtS"></div></div>
           </div>
 
+          <div class="alert alert-warning small mb-3" id="mtPNotice" style="display:none"></div>
           <form id="mtPForm" class="mt-need-purchase" onsubmit="return MT.savePurchase(event)">
             <input type="hidden" name="id"><input type="hidden" name="photos" id="mtPPhotosKeep">
             <div class="mt-box">
@@ -7344,6 +7345,15 @@ var MT = (function () {
   }
   function renderPurchases() {
     if (!S.d) return;
+    // ແຈ້ງເຫດຜົນທີ່ຟອມບໍ່ສະແດງ: ເຊີບເວີ (Code.gs) ຍັງເປັນສະບັບເກົ່າ ຫຼື ຜູ້ໃຊ້ຍັງບໍ່ມີສິດສົ່ງ
+    var nb = $('mtPNotice');
+    if (S.d.purchases === undefined) {
+      nb.style.display = 'block';
+      nb.innerHTML = '⚠️ <b>ເຊີບເວີຍັງເປັນສະບັບເກົ່າ</b> — ກະລຸນາອັບເດດ <b>Code.gs</b> ໃນ Google Apps Script ແລ້ວ Deploy ເປັນ Version ໃໝ່ (Deploy → Manage deployments → Edit → Version: New). ຫຼັງຈາກນັ້ນ ກົດ "ໂຫຼດໃໝ່".';
+    } else if ((S.d.perm || {}).purchase !== 'edit') {
+      nb.style.display = 'block';
+      nb.innerHTML = '🔒 ທ່ານຍັງບໍ່ມີສິດ <b>"ສົ່ງໃບສະເໜີຊື້ອະໄຫຼ່"</b> — ໃຫ້ Admin ເປີດສິດໃນໜ້າ "ຈັດການຜູ້ໃຊ້ລະບົບ" → ສ້ອມແປງລົດ-ກົນຈັກ → 🛒 ສົ່ງໃບສະເໜີຊື້ອະໄຫຼ່ = ແກ້ໄຂ.';
+    } else nb.style.display = 'none';
     var base = filteredPurchases(), cnt = {};
     base.forEach(function (x) { cnt[x.status] = (cnt[x.status] || 0) + 1; });
     var openN = (cnt.pending || 0) + (cnt.approved || 0) + (cnt.ordered || 0);

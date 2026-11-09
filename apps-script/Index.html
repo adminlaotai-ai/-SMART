@@ -1571,7 +1571,10 @@
                   <div class="row">
                     <div class="col-md-3 col-sm-6 mb-3">
                       <label class="form-label fw-bold small">🚗 ທະບຽນລົດ</label>
-                      <select class="form-select" id="vuCarnumber" required onchange="vuOnCarChange()"></select>
+                      <div class="input-group">
+                        <select class="form-select" id="vuCarnumber" required onchange="vuOnCarChange()"></select>
+                        <button type="button" class="btn btn-success fw-bold" onclick="SFCARS.prompt('vuCarnumber')" title="ເພີ່ມທະບຽນລົດ" aria-label="ເພີ່ມທະບຽນລົດ"><i class="bi bi-plus-lg"></i></button>
+                      </div>
                     </div>
                     <div class="col-md-3 col-sm-6 mb-3">
                       <label class="form-label fw-bold small">🚗 ປະເພດລົດ</label>
@@ -2250,7 +2253,7 @@
                 <label>ຕ້ອງການພາຍໃນວັນທີ<input class="form-control form-control-sm" type="date" name="neededBy"></label>
                 <label>ສະໜາມ *<select class="form-select form-select-sm" name="station" id="mtPStation" required></select></label>
                 <label>ຄວາມດ່ວນ *<select class="form-select form-select-sm" name="urgency"><option value="normal">🟢 ປົກກະຕິ</option><option value="urgent">🟠 ດ່ວນ</option><option value="critical">🔴 ດ່ວນທີ່ສຸດ</option></select></label>
-                <label class="mt-span2">ສຳລັບລົດ-ກົນຈັກ (ບໍ່ບັງຄັບ)<select class="form-select form-select-sm" name="plate" id="mtPPlate" onchange="MT.pVehicle()"></select></label>
+                <label class="mt-span2">ສຳລັບລົດ-ກົນຈັກ (ບໍ່ບັງຄັບ)<div class="input-group input-group-sm"><select class="form-select form-select-sm" name="plate" id="mtPPlate" onchange="MT.pVehicle()"></select><button type="button" class="btn btn-success fw-bold mt-addveh" title="ເພີ່ມລົດໃໝ່ເຂົ້າຖານຂໍ້ມູນ" aria-label="ເພີ່ມລົດໃໝ່ເຂົ້າຖານຂໍ້ມູນ" onclick="SFCARS.prompt('mtPPlate')">+ ເພີ່ມລົດ</button></div></label>
                 <label>ອ້າງອີງໃບສະເໜີສ້ອມ<input class="form-control form-control-sm" name="requestNo" list="mtPReqList" placeholder="RQ…"></label>
                 <label>ຮ້ານ / ຜູ້ສະໜອງ ທີ່ສະເໜີ<input class="form-control form-control-sm" name="supplier" list="mtShops"></label>
                 <label>ຜູ້ສະເໜີ<input class="form-control form-control-sm" name="requestedBy" list="mtDrivers"></label>
@@ -2821,6 +2824,18 @@
       <!-- [TAB 7] USER MANAGEMENT CONTENT -->
       <div id="usermanage-content" class="dashboard-container">
         <div class="row">
+          <div class="col-12 mb-3" id="carApprovalBox" style="display:none">
+            <div class="table-container">
+              <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                <h6 class="fw-bold text-primary mb-0">🚗 ລົດໃໝ່ລໍຖ້າອະນຸມັດ <span class="badge bg-warning text-dark" id="carApprovalCount">0</span></h6>
+                <span class="small text-muted">ສະເພາະ SuperAdmin · ອະນຸມັດແລ້ວ ລົດຈະຂຶ້ນໃນທຸກຟອມ ໃຫ້ທຸກຄົນເຫັນ</span>
+              </div>
+              <div class="table-responsive"><table class="table table-sm align-middle mb-0">
+                <thead><tr><th>ທະບຽນ</th><th>ປະເພດ / ລຸ້ນ</th><th>ສະໜາມ</th><th>ຜູ້ເພີ່ມ</th><th></th></tr></thead>
+                <tbody id="carApprovalBody"></tbody>
+              </table></div>
+            </div>
+          </div>
           <div class="col-12 mb-3">
             <div class="table-container">
               <div class="d-flex justify-content-between align-items-center mb-3">
@@ -2997,6 +3012,12 @@
                 <div class="form-check">
                   <input class="form-check-input" type="checkbox" id="perm_vehicleUsage">
                   <label class="form-check-label small" for="perm_vehicleUsage">ບັນທຶກການນຳໃຊ້ລົດ</label>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="perm_carAdd">
+                  <label class="form-check-label small" for="perm_carAdd">🚗 ເພີ່ມລົດໃໝ່ (ລໍ SuperAdmin ອະນຸມັດ)</label>
                 </div>
               </div>
               <div class="col-12">
@@ -3497,6 +3518,7 @@ function sfForceRelogin() {
     populateStationDropdown(res.stations);
     populatePeopleSelects(res.people);
     stationGuardUpdate('carnumber', 'location', 'locationGuard');
+    SFCARS.load();
     renderTableData(res.rawData);
     renderAccordionHistory(res.rawData, res.stations);
     renderUserTable(res.userList);
@@ -4604,11 +4626,113 @@ function executeStockSubmit(formObj) {
     sel.appendChild(opt);
   }
 
-  function promptAddNewCarRegistration() {
-    Swal.fire({ title: '➕ ເພີ່ມທະບຽນລົດ', input: 'text', showCancelButton: true, confirmButtonText: 'ເພີ່ມ' }).then((res) => {
-      if (res.isConfirmed && res.value) addSelectOption('carnumber', res.value.trim());
-    });
-  }
+  function promptAddNewCarRegistration() { SFCARS.prompt('carnumber'); }
+
+  /* ==================== 🚗 ຖານຂໍ້ມູນລົດກາງ (ໃຊ້ຮ່ວມກັນທຸກຟອມ ແລະ ທຸກບໍລິສັດ) ==================== */
+  // ດຶງລາຍການລົດຈາກ Sheet ຂອງບໍລິສັດທີ່ເລືອກ → ເຕີມໃສ່ທຸກ dropdown ທະບຽນລົດ.
+  // ປຸ່ມ + ບັນທຶກລົດໃໝ່ລົງຖານຂໍ້ມູນ; ຖ້າບໍ່ແມ່ນ SuperAdmin ຈະລໍຖ້າ SuperAdmin ອະນຸມັດ.
+  var SFCARS = (function () {
+    var S = { cars: [], canAdd: false, canApprove: false, pending: [], loaded: false, shownPending: false };
+    function esc(x) { return String(x == null ? '' : x).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+    function run(fn) {
+      var args = [sfAuth()].concat(Array.prototype.slice.call(arguments, 1));
+      return new Promise(function (ok, bad) {
+        var r = google.script.run.withSuccessHandler(function (x) { if (x && x.success === false) bad(new Error(x.error)); else ok(x); }).withFailureHandler(bad);
+        r[fn].apply(r, args);
+      });
+    }
+    function label(c) { return c.plate + (c.status === 'pending' ? ' ⏳ ລໍຖ້າອະນຸມັດ' : ''); }
+    function fill() {
+      var sel = document.getElementById('carnumber');
+      if (sel && S.cars.length) {
+        var keep = sel.value;
+        sel.innerHTML = '<option value="" ' + (keep ? '' : 'selected ') + 'disabled>-- ເລືອກທະບຽນລົດ --</option>' +
+          S.cars.map(function (c) { return '<option value="' + esc(c.plate) + '">' + esc(label(c)) + '</option>'; }).join('');
+        if (keep) { if (!Array.prototype.some.call(sel.options, function (o) { return o.value === keep; })) sel.add(new Option(keep, keep)); sel.value = keep; }
+      }
+      if (typeof vuCopyOptions === 'function') { vuCopyOptions('carnumber', 'vuCarnumber', '-- ເລືອກທະບຽນລົດ --'); vuCopyOptions('carnumber', 'vuFilterPlate', 'ທັງໝົດ'); }
+      try { stationGuardUpdate('carnumber', 'location', 'locationGuard'); } catch (e) {}
+      renderApprovals();
+    }
+    function apply(r) {
+      S.cars = r.cars || []; S.canAdd = !!r.canAdd; S.canApprove = !!r.canApprove; S.pending = r.pending || []; S.loaded = true;
+      fill();
+    }
+    function load() {
+      return run('getCarList').then(function (r) {
+        apply(r);
+        if (S.canApprove && S.pending.length && !S.shownPending) {
+          S.shownPending = true;
+          Swal.fire({ toast: true, position: 'top-end', icon: 'info', timer: 6000, showConfirmButton: false,
+            title: '🚗 ມີລົດໃໝ່ລໍຖ້າອະນຸມັດ ' + S.pending.length + ' ຄັນ', text: 'ເບິ່ງໃນໜ້າ "ຈັດການຜູ້ໃຊ້ລະບົບ"' });
+        }
+      }).catch(function (e) { console.warn('getCarList', e); }); // ເຊີບເວີເກົ່າ: ໃຊ້ລາຍການເດີມໃນຟອມ
+    }
+    function renderApprovals() {
+      var box = document.getElementById('carApprovalBox'); if (!box) return;
+      if (!S.canApprove || !S.pending.length) { box.style.display = 'none'; return; }
+      box.style.display = 'block';
+      document.getElementById('carApprovalCount').textContent = S.pending.length;
+      document.getElementById('carApprovalBody').innerHTML = S.pending.map(function (c) {
+        return '<tr><td class="fw-bold">' + esc(c.plate) + '</td><td>' + esc([c.type, c.model].filter(Boolean).join(' · ') || '-') + '</td><td>' + esc(c.station || '-') + '</td>' +
+          '<td>' + esc(c.addedBy || '') + '<div class="small text-muted">' + esc(c.addedAt || '') + '</div></td>' +
+          '<td class="text-end text-nowrap"><button class="btn btn-sm btn-success py-0" onclick="SFCARS.decide(\'' + esc(c.id) + '\',\'approved\')">✅ ອະນຸມັດ</button> ' +
+          '<button class="btn btn-sm btn-outline-danger py-0" onclick="SFCARS.decide(\'' + esc(c.id) + '\',\'rejected\')">❌ ບໍ່ອະນຸມັດ</button></td></tr>';
+      }).join('');
+    }
+    function decide(id, decision) {
+      var c = S.pending.find(function (x) { return x.id === id; }); if (!c) return;
+      Swal.fire({ icon: decision === 'approved' ? 'question' : 'warning', title: (decision === 'approved' ? 'ອະນຸມັດ ' : 'ບໍ່ອະນຸມັດ ') + esc(c.plate) + '?',
+        showCancelButton: true, confirmButtonText: decision === 'approved' ? 'ອະນຸມັດ' : 'ບໍ່ອະນຸມັດ', cancelButtonText: 'ປິດ',
+        confirmButtonColor: decision === 'approved' ? '#16a34a' : '#e74c3c' }).then(function (x) {
+        if (!x.isConfirmed) return;
+        Swal.fire({ title: 'ກຳລັງບັນທຶກ…', allowOutsideClick: false, didOpen: function () { Swal.showLoading(); } });
+        run('decideCar', id, decision, '').then(function (r) { apply(r); refreshMt(); Swal.fire({ icon: 'success', title: decision === 'approved' ? 'ອະນຸມັດແລ້ວ' : 'ບໍ່ອະນຸມັດແລ້ວ', timer: 1400, showConfirmButton: false }); })
+          .catch(function (e) { Swal.fire({ icon: 'error', title: 'ບໍ່ສຳເລັດ', text: String(e.message || e) }); });
+      });
+    }
+    function refreshMt() { try { if (window.MT && document.getElementById('mt-content').classList.contains('active')) MT.reload(); else if (window.MT) MT.reset(); } catch (e) {} }
+    /** ➕ ເພີ່ມລົດໃໝ່ ແລ້ວເລືອກໃຫ້ໃນ dropdown ທີ່ກົດ */
+    function prompt(targetId) {
+      if (S.loaded && !S.canAdd) { Swal.fire({ icon: 'info', title: 'ບໍ່ມີສິດເພີ່ມລົດ', text: 'ໃຫ້ Admin ເປີດສິດ "🚗 ເພີ່ມລົດໃໝ່" ໃນໜ້າຈັດການຜູ້ໃຊ້ລະບົບ' }); return; }
+      var stations = Array.prototype.map.call((document.getElementById('location') || { options: [] }).options, function (o) { return o.value; }).filter(Boolean);
+      var types = Array.prototype.map.call((document.getElementById('cartype') || { options: [] }).options, function (o) { return o.value; }).filter(Boolean);
+      var L = function (t, inner) { return '<label style="display:block;text-align:left;font-size:12px;font-weight:600;color:#64748b;margin-top:8px">' + t + inner + '</label>'; };
+      Swal.fire({
+        title: '➕ ເພີ່ມລົດໃໝ່ເຂົ້າຖານຂໍ້ມູນ',
+        html: L('ທະບຽນລົດ / ລະຫັດລົດ *', '<input id="scPlate" class="form-control" placeholder="ຕົວຢ່າງ: ກກ 1234 (ບ/ສ)">') +
+          L('ປະເພດລົດ', '<input id="scType" class="form-control" list="scTypes"><datalist id="scTypes">' + types.map(function (t) { return '<option value="' + esc(t) + '">'; }).join('') + '</datalist>') +
+          L('ລຸ້ນ / ຍີ່ຫໍ້', '<input id="scModel" class="form-control" placeholder="ຕົວຢ່າງ: HOWO, Toyota">') +
+          L('ສະໜາມປະຈຳ', '<select id="scSite" class="form-select"><option value="">— ບໍ່ລະບຸ —</option>' + stations.map(function (t) { return '<option>' + esc(t) + '</option>'; }).join('') + '</select>') +
+          '<div style="text-align:left;font-size:11.5px;color:#64748b;margin-top:10px">' + (S.canApprove ? '👑 ທ່ານເປັນ SuperAdmin — ລົດຈະຖືກອະນຸມັດທັນທີ' : '⏳ ລົດໃໝ່ຈະລໍຖ້າ SuperAdmin ອະນຸມັດ ກ່ອນຂຶ້ນໃຫ້ທຸກຄົນເຫັນ (ທ່ານໃຊ້ໄດ້ທັນທີ)') + '</div>',
+        showCancelButton: true, confirmButtonText: '💾 ບັນທຶກລົດ', cancelButtonText: 'ຍົກເລີກ', focusConfirm: false,
+        didOpen: function () { document.getElementById('scPlate').focus(); },
+        preConfirm: function () {
+          var o = { plate: document.getElementById('scPlate').value.trim(), type: document.getElementById('scType').value.trim(), model: document.getElementById('scModel').value.trim(), station: document.getElementById('scSite').value };
+          if (!o.plate) { Swal.showValidationMessage('ກະລຸນາໃສ່ທະບຽນລົດ'); return false; }
+          return o;
+        }
+      }).then(function (x) {
+        if (!x.isConfirmed) return;
+        Swal.fire({ title: 'ກຳລັງບັນທຶກ…', allowOutsideClick: false, didOpen: function () { Swal.showLoading(); } });
+        run('addCar', x.value).then(function (r) {
+          apply(r);
+          var plate = r.added || x.value.plate;
+          var after = function () {
+            var sel = document.getElementById(targetId);
+            if (sel) { if (!Array.prototype.some.call(sel.options, function (o) { return o.value === plate; })) sel.add(new Option(plate, plate)); sel.value = plate; sel.dispatchEvent(new Event('change')); }
+          };
+          if (targetId && targetId.indexOf('mt') === 0 && window.MT) { var p = MT.reload(); if (p && p.then) p.then(after); else after(); } else after();
+          Swal.fire({ icon: 'success', title: 'ເພີ່ມລົດ ' + plate + ' ແລ້ວ', text: r.autoApproved ? 'ອະນຸມັດແລ້ວ — ທຸກຄົນເຫັນລົດຄັນນີ້' : 'ລໍຖ້າ SuperAdmin ອະນຸມັດ (ທ່ານໃຊ້ໄດ້ທັນທີ)', timer: 2200, showConfirmButton: false });
+        }).catch(function (e) {
+          if (/Function not allowed/.test(String(e.message || e))) { addSelectOption(targetId || 'carnumber', x.value.plate); Swal.fire({ icon: 'warning', title: 'ເພີ່ມສະເພາະໜ້ານີ້', text: 'ເຊີບເວີຍັງເປັນສະບັບເກົ່າ — ລົດຍັງບໍ່ໄດ້ບັນທຶກລົງຖານຂໍ້ມູນ' }); return; }
+          Swal.fire({ icon: 'error', title: 'ບໍ່ສຳເລັດ', text: String(e.message || e).replace(/^(Exception|Error):\s*/, '') });
+        });
+      });
+    }
+    return { load: load, prompt: prompt, decide: decide, list: function () { return S.cars; } };
+  })();
+
   function promptAddNewCarType() {
     Swal.fire({ title: '➕ ເພີ່ມປະເພດລົດ', input: 'text', showCancelButton: true, confirmButtonText: 'ເພີ່ມ' }).then((res) => {
       if (res.isConfirmed && res.value) addSelectOption('cartype', res.value.trim());
@@ -4885,7 +5009,7 @@ function executeStockSubmit(formObj) {
     });
   }
 
-  const PERMISSION_LABELS = { recordOut: 'ບັນທຶກອອກ', recordIn: 'ບັນທຶກເຂົ້າ', dashboard: 'ແດຊບອດ', tableOut: 'ຕາຕະລາງອອກ', tableIn: 'ຕາຕະລາງເຂົ້າ', manageUsers: 'ຈັດການຜູ້ໃຊ້', stockSummary: 'ຄັງນ້ຳມັນຄົງເຫຼືອ', dailyReport: 'ລາຍງານປະຈຳວັນ', monthlyReport: 'ລາຍງານປະຈຳເດືອນ', yearlyReport: 'ລາຍງານປະຈຳປີ', vehicleUsage: 'ນຳໃຊ້ລົດ',
+  const PERMISSION_LABELS = { carAdd: 'ເພີ່ມລົດໃໝ່', recordOut: 'ບັນທຶກອອກ', recordIn: 'ບັນທຶກເຂົ້າ', dashboard: 'ແດຊບອດ', tableOut: 'ຕາຕະລາງອອກ', tableIn: 'ຕາຕະລາງເຂົ້າ', manageUsers: 'ຈັດການຜູ້ໃຊ້', stockSummary: 'ຄັງນ້ຳມັນຄົງເຫຼືອ', dailyReport: 'ລາຍງານປະຈຳວັນ', monthlyReport: 'ລາຍງານປະຈຳເດືອນ', yearlyReport: 'ລາຍງານປະຈຳປີ', vehicleUsage: 'ນຳໃຊ້ລົດ',
     rentalContracts: 'ເຊົ່າ·ຜູ້ໃຫ້ເຊົ່າ ແລະ ສັນຍາ', rentalLogs: 'ເຊົ່າ·ບັນທຶກປະຈຳວັນ', rentalBilling: 'ເຊົ່າ·ຄິດໄລ່ຄ່າເຊົ່າ', rentalPayments: 'ເຊົ່າ·ການຈ່າຍຄ່າເຊົ່າ', rentalReport: 'ເຊົ່າ·ລາຍງານລົດເຊົ່າ', mtOverview: 'ສ້ອມ·ພາບລວມ ແລະ ກຳນົດປ່ຽນ', mtRequest: 'ສ້ອມ·ສົ່ງໃບສະເໜີສ້ອມແປງ', mtPurchase: 'ສ້ອມ·ສົ່ງໃບສະເໜີຊື້ອະໄຫຼ່', mtApprove: 'ສ້ອມ·🔐 ອະນຸມັດ / ບໍ່ອະນຸມັດ ໃບສະເໜີ', mtReqEdit: 'ສ້ອມ·🔐 ແກ້ໄຂ / ຍົກເລີກ ໃບສະເໜີ', mtSigRequester: 'ສ້ອມ·✍️ ລົງນາມ: ຜູ້ສະເໜີ', mtSigSite: 'ສ້ອມ·✍️ ລົງນາມ: ຫົວໜ້າສະໜາມ', mtSigMech: 'ສ້ອມ·✍️ ລົງນາມ: ພະແນກກົນຈັກ', mtSigApprover: 'ສ້ອມ·✍️ ລົງນາມ: ຜູ້ອະນຸມັດ', mtForm: 'ສ້ອມ·ບັນທຶກໃບສ້ອມໃໝ່', mtHistory: 'ສ້ອມ·ປະຫວັດ', mtVehicles: 'ສ້ອມ·ທະບຽນລົດ-ກົນຈັກ', mtReport: 'ສ້ອມ·ລາຍງານຄ່າສ້ອມແປງ' };
   const LEVELED_PERMISSION_KEYS = ['tableOut', 'tableIn', 'rentalContracts', 'rentalLogs', 'rentalBilling', 'rentalPayments', 'rentalReport', 'mtOverview', 'mtRequest', 'mtPurchase', 'mtApprove', 'mtReqEdit', 'mtSigRequester', 'mtSigSite', 'mtSigMech', 'mtSigApprover', 'mtForm', 'mtHistory', 'mtVehicles', 'mtReport'];
   const MODULE_PERMISSION_GROUPS = { rental: ['rentalContracts', 'rentalLogs', 'rentalBilling', 'rentalPayments', 'rentalReport'], mt: ['mtOverview', 'mtRequest', 'mtPurchase', 'mtApprove', 'mtReqEdit', 'mtSigRequester', 'mtSigSite', 'mtSigMech', 'mtSigApprover', 'mtForm', 'mtHistory', 'mtVehicles', 'mtReport'] };
@@ -6415,8 +6539,8 @@ var MT = (function () {
     var v = (S.d.vehicles || []).find(function (v) { return key(v.plate) === k; });
     if (v) return v;
     // ລົດທີ່ມີໃນຖານຂໍ້ມູນລົດ (ລະບົບນ້ຳມັນ / ລົດປະຈຳສະໜາມ) ແຕ່ຍັງບໍ່ລົງທະບຽນ — ລົງທະບຽນໃຫ້ເອງຕອນບັນທຶກ
-    var c = (S.d.candidates || []).find(function (c) { return key(c.plate) === k; });
-    if (c) return { plate: c.plate, model: c.model, type: c.type, station: c.station, meterNow: c.odo || 0, fromDb: true,
+    var c = (S.d.candidates || []).find(function (c) { return key(c.plate) === k; }) || (S.d.cars || []).find(function (c) { return key(c.plate) === k; });
+    if (c) return { plate: c.plate, model: c.model || '', type: c.type || '', station: c.station || '', meterNow: c.odo || 0, fromDb: true,
       unit: /ຂຸດ|ຕັກ|ເກຣດ|ບົດ|ເຄນ|ປັ່ນໄຟ|excavator|loader|generator/i.test((c.type || '') + ' ' + (c.model || '')) ? 'hr' : 'km' };
     return { plate: plate, model: '', unit: 'km', station: '' };
   }
@@ -6424,10 +6548,13 @@ var MT = (function () {
   function plateOpts(active, first) {
     var known = {}; active.forEach(function (v) { known[key(v.plate)] = 1; });
     var cand = (S.d.candidates || []).filter(function (c) { return !known[key(c.plate)]; }).sort(function (a, b) { return a.plate.localeCompare(b.plate); });
-    var o = function (v) { return '<option value="' + esc(v.plate) + '">' + esc(vLabel(v)) + '</option>'; };
+    cand.forEach(function (c) { known[key(c.plate)] = 1; });
+    var cars = (S.d.cars || []).filter(function (c) { return !known[key(c.plate)]; });
+    var o = function (v) { return '<option value="' + esc(v.plate) + '">' + esc(vLabel(v)) + (v.status === 'pending' ? ' ⏳ ລໍຖ້າອະນຸມັດ' : '') + '</option>'; };
     return '<option value="">' + first + '</option>' +
       (active.length ? '<optgroup label="📋 ທະບຽນລົດ-ກົນຈັກ (' + active.length + ')">' + active.map(o).join('') + '</optgroup>' : '') +
-      (cand.length ? '<optgroup label="⛽ ຖານຂໍ້ມູນລົດ (' + cand.length + ')">' + cand.map(o).join('') + '</optgroup>' : '');
+      (cand.length ? '<optgroup label="⛽ ຖານຂໍ້ມູນລົດ (' + cand.length + ')">' + cand.map(o).join('') + '</optgroup>' : '') +
+      (cars.length ? '<optgroup label="🚗 ຖານຂໍ້ມູນລົດກາງ (' + cars.length + ')">' + cars.map(o).join('') + '</optgroup>' : '');
   }
   function unitOf(plate) { return veh(plate).unit === 'hr' ? 'ຊມ' : 'ກມ'; }
   function partsOf(id) { return (S.d.parts || []).filter(function (p) { return p.recordId === id; }); }

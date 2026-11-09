@@ -53,21 +53,23 @@ function doPost(e) {
 // ລາຍການສິດແບບລະອຽດ (Granular Permissions) - ຕ້ອງກົງກັບ checkbox ຝັ່ງ Client
 const PERMISSION_KEYS = ['recordOut', 'recordIn', 'dashboard', 'tableOut', 'tableIn', 'manageUsers', 'stockSummary', 'dailyReport', 'monthlyReport', 'yearlyReport', 'vehicleUsage',
   'rentalContracts', 'rentalLogs', 'rentalBilling', 'rentalPayments', 'rentalReport',
-  'mtOverview', 'mtRequest', 'mtApprove', 'mtReqEdit', 'mtSigRequester', 'mtSigSite', 'mtSigMech', 'mtSigApprover', 'mtForm', 'mtHistory', 'mtVehicles', 'mtReport'];
+  'mtOverview', 'mtRequest', 'mtPurchase', 'mtApprove', 'mtReqEdit', 'mtSigRequester', 'mtSigSite', 'mtSigMech', 'mtSigApprover', 'mtForm', 'mtHistory', 'mtVehicles', 'mtReport'];
 // ສິດປະເພດນີ້ມີ 3 ລະດັບ: 'none' (ບໍ່ມີສິດ) | 'view' (ເບິ່ງຢ່າງດຽວ) | 'edit' (ເບິ່ງ & ແກ້ໄຂ/ລຶບ/ສົ່ງອອກ)
-const LEVELED_PERMISSION_KEYS = ['tableOut', 'tableIn', 'rentalContracts', 'rentalLogs', 'rentalBilling', 'rentalPayments', 'rentalReport', 'mtOverview', 'mtRequest', 'mtApprove', 'mtReqEdit', 'mtSigRequester', 'mtSigSite', 'mtSigMech', 'mtSigApprover', 'mtForm', 'mtHistory', 'mtVehicles', 'mtReport'];
+const LEVELED_PERMISSION_KEYS = ['tableOut', 'tableIn', 'rentalContracts', 'rentalLogs', 'rentalBilling', 'rentalPayments', 'rentalReport', 'mtOverview', 'mtRequest', 'mtPurchase', 'mtApprove', 'mtReqEdit', 'mtSigRequester', 'mtSigSite', 'mtSigMech', 'mtSigApprover', 'mtForm', 'mtHistory', 'mtVehicles', 'mtReport'];
 // ລະດັບທີ່ອະນຸຍາດສຳລັບບາງໜ້າ (ໜ້າລາຍງານ/ພາບລວມ ມີແຕ່ "ເບິ່ງ", ໜ້າບັນທຶກໃບສ້ອມໃໝ່ ມີແຕ່ "ແກ້ໄຂ")
 const PERMISSION_LEVEL_LIMITS = { rentalReport: ['none', 'view'], mtOverview: ['none', 'view'], mtReport: ['none', 'view'], mtForm: ['none', 'edit'], mtApprove: ['none', 'edit'], mtReqEdit: ['none', 'edit'], mtSigRequester: ['none', 'edit'], mtSigSite: ['none', 'edit'], mtSigMech: ['none', 'edit'], mtSigApprover: ['none', 'edit'] };
 
 // ແປງສິດແບບເກົ່າ (rental / maintenance ອັນດຽວ) ເປັນສິດລາຍໜ້າ — ສຳລັບຜູ້ໃຊ້ທີ່ຕັ້ງສິດໄວ້ກ່ອນອັບເດດ
 function migrateModulePermissions_(p) {
   if (!p || typeof p !== 'object') return p;
-  const groups = { rental: ['rentalContracts', 'rentalLogs', 'rentalBilling', 'rentalPayments', 'rentalReport'], maintenance: ['mtOverview', 'mtRequest', 'mtApprove', 'mtReqEdit', 'mtSigRequester', 'mtSigSite', 'mtSigMech', 'mtSigApprover', 'mtForm', 'mtHistory', 'mtVehicles', 'mtReport'] };
+  const groups = { rental: ['rentalContracts', 'rentalLogs', 'rentalBilling', 'rentalPayments', 'rentalReport'], maintenance: ['mtOverview', 'mtRequest', 'mtPurchase', 'mtApprove', 'mtReqEdit', 'mtSigRequester', 'mtSigSite', 'mtSigMech', 'mtSigApprover', 'mtForm', 'mtHistory', 'mtVehicles', 'mtReport'] };
   Object.keys(groups).forEach(old => {
     const v = p[old];
     if (!v || v === 'none' || groups[old].some(k => p[k] !== undefined)) return;
     groups[old].forEach(k => { p[k] = v; });
   });
+  // 🛒 ໃບສະເໜີຊື້ອະໄຫຼ່ (ເພີ່ມໃໝ່): ຜູ້ໃຊ້ເກົ່າທີ່ມີສິດ "ສົ່ງໃບສະເໜີສ້ອມແປງ" ໄດ້ສິດລະດັບດຽວກັນ ຈົນກວ່າ Admin ຈະປ່ຽນ
+  if (p.mtPurchase === undefined && p.mtRequest) p.mtPurchase = p.mtRequest;
   return p;
 }
 
@@ -3923,8 +3925,8 @@ const MT_DUE_DATE_WARN_DAYS = 15; // ອະໄຫຼ່ທີ່ປ່ຽນຕ�
 const MT_DEFAULT_RATES = { THB: 690, USD: 22700, CNY: 3400 };
 
 // 🔐 ສິດລາຍໜ້າຂອງລະບົບສ້ອມແປງ (ກຳນົດໃນໜ້າຈັດການຜູ້ໃຊ້)
-const MT_PAGES = { overview: 'mtOverview', request: 'mtRequest', approve: 'mtApprove', reqEdit: 'mtReqEdit', sigRequester: 'mtSigRequester', sigSite: 'mtSigSite', sigMech: 'mtSigMech', sigApprover: 'mtSigApprover', form: 'mtForm', history: 'mtHistory', vehicles: 'mtVehicles', report: 'mtReport' };
-const MT_PAGE_LABELS = { overview: 'ພາບລວມ ແລະ ກຳນົດປ່ຽນ', request: 'ໃບສະເໜີສ້ອມແປງ', approve: 'ອະນຸມັດໃບສະເໜີ', reqEdit: 'ແກ້ໄຂ / ຍົກເລີກ ໃບສະເໜີ', sigRequester: 'ລົງນາມ: ຜູ້ສະເໜີ', sigSite: 'ລົງນາມ: ຫົວໜ້າສະໜາມ', sigMech: 'ລົງນາມ: ພະແນກກົນຈັກ', sigApprover: 'ລົງນາມ: ຜູ້ອະນຸມັດ', form: 'ບັນທຶກການສ້ອມແປງ', history: 'ປະຫວັດສ້ອມແປງ', vehicles: 'ທະບຽນລົດ-ກົນຈັກ', report: 'ລາຍງານຄ່າສ້ອມແປງ' };
+const MT_PAGES = { overview: 'mtOverview', request: 'mtRequest', purchase: 'mtPurchase', approve: 'mtApprove', reqEdit: 'mtReqEdit', sigRequester: 'mtSigRequester', sigSite: 'mtSigSite', sigMech: 'mtSigMech', sigApprover: 'mtSigApprover', form: 'mtForm', history: 'mtHistory', vehicles: 'mtVehicles', report: 'mtReport' };
+const MT_PAGE_LABELS = { overview: 'ພາບລວມ ແລະ ກຳນົດປ່ຽນ', request: 'ໃບສະເໜີສ້ອມແປງ', purchase: 'ໃບສະເໜີຊື້ອະໄຫຼ່', approve: 'ອະນຸມັດໃບສະເໜີ', reqEdit: 'ແກ້ໄຂ / ຍົກເລີກ ໃບສະເໜີ', sigRequester: 'ລົງນາມ: ຜູ້ສະເໜີ', sigSite: 'ລົງນາມ: ຫົວໜ້າສະໜາມ', sigMech: 'ລົງນາມ: ພະແນກກົນຈັກ', sigApprover: 'ລົງນາມ: ຜູ້ອະນຸມັດ', form: 'ບັນທຶກການສ້ອມແປງ', history: 'ປະຫວັດສ້ອມແປງ', vehicles: 'ທະບຽນລົດ-ກົນຈັກ', report: 'ລາຍງານຄ່າສ້ອມແປງ' };
 function mtPerm_(user) {
   const o = {};
   Object.keys(MT_PAGES).forEach(pg => {
@@ -3977,7 +3979,16 @@ const MT_SCHEMA = {
     ['items', 'ລາຍການຄາດຄະເນ(JSON)', 's'], ['estLaborAmt', 'ຄ່າແຮງຄາດຄະເນ', 'n'], ['estLaborCur', 'ສະກຸນຄ່າແຮງ', 's'], ['estTotalLAK', 'ຄາດຄະເນລວມ(ກີບ)', 'n'],
     ['shopType', 'ສ້ອມທີ່', 's'], ['shop', 'ອູ່/ຮ້ານທີ່ສະເໜີ', 's'], ['photos', 'ຮູບ', 's'], ['status', 'ສະຖານະ', 's'],
     ['approver', 'ຜູ້ອະນຸມັດ', 's'], ['decidedAt', 'ວັນທີອະນຸມັດ', 'dt'], ['approvedLAK', 'ວົງເງິນອະນຸມັດ(ກີບ)', 'n'], ['decisionNote', 'ຄຳເຫັນຜູ້ອະນຸມັດ', 's'],
-    ['recordId', 'ລະຫັດໃບສ້ອມ', 's'], ['createdAt', 'ວັນທີສ້າງ', 'dt'], ['createdBy', 'ຜູ້ສ້າງ', 's'], ['createdByEmail', 'Email ຜູ້ສ້າງ', 's'], ['sigs', 'ລາຍເຊັນ (JSON)', 's']] }
+    ['recordId', 'ລະຫັດໃບສ້ອມ', 's'], ['createdAt', 'ວັນທີສ້າງ', 'dt'], ['createdBy', 'ຜູ້ສ້າງ', 's'], ['createdByEmail', 'Email ຜູ້ສ້າງ', 's'], ['sigs', 'ລາຍເຊັນ (JSON)', 's']] },
+  purchases: { sheet: 'MT_Purchases', prefix: 'PR', cols: [
+    ['id', 'ລະຫັດ', 's'], ['prNo', 'ເລກທີໃບສະເໜີຊື້', 's'], ['date', 'ວັນທີ', 'd'], ['neededBy', 'ຕ້ອງການພາຍໃນ', 'd'], ['station', 'ສະໜາມ', 's'],
+    ['plate', 'ສຳລັບລົດ', 's'], ['requestNo', 'ອ້າງອີງໃບສະເໜີສ້ອມ', 's'], ['purpose', 'ເຫດຜົນ/ຈຸດປະສົງ', 's'], ['urgency', 'ຄວາມດ່ວນ', 's'],
+    ['supplier', 'ຮ້ານ/ຜູ້ສະໜອງ', 's'], ['items', 'ລາຍການ(JSON)', 's'], ['estTotalLAK', 'ລວມຄາດຄະເນ(ກີບ)', 'n'],
+    ['requestedBy', 'ຜູ້ສະເໜີ', 's'], ['phone', 'ເບີໂທ', 's'], ['photos', 'ຮູບ/ໃບສະເໜີລາຄາ', 's'], ['status', 'ສະຖານະ', 's'],
+    ['approver', 'ຜູ້ອະນຸມັດ', 's'], ['decidedAt', 'ວັນທີພິຈາລະນາ', 'dt'], ['approvedLAK', 'ວົງເງິນອະນຸມັດ(ກີບ)', 'n'], ['decisionNote', 'ຄຳເຫັນຜູ້ອະນຸມັດ', 's'],
+    ['poNo', 'ເລກໃບສັ່ງຊື້/ບິນ', 's'], ['orderedAt', 'ວັນທີສັ່ງຊື້', 'dt'], ['orderedBy', 'ຜູ້ສັ່ງຊື້', 's'],
+    ['receivedAt', 'ວັນທີຮັບເຄື່ອງ', 'dt'], ['receivedBy', 'ຜູ້ຮັບເຄື່ອງ', 's'], ['actualLAK', 'ລາຄາຈິງ(ກີບ)', 'n'], ['note', 'ໝາຍເຫດ', 's'],
+    ['createdAt', 'ວັນທີສ້າງ', 'dt'], ['createdBy', 'ຜູ້ສ້າງ', 's'], ['createdByEmail', 'Email ຜູ້ສ້າງ', 's']] }
 };
 
 /* ---------- ພື້ນຖານ ---------- */
@@ -4170,7 +4181,8 @@ function mtScoped_(user) {
   const ids = new Set(records.map(r => r.id));
   const parts = mtRead_('parts').filter(p => ids.has(p.recordId));
   const requests = mtRead_('requests').filter(q => keys.has(mtKey_(q.plate)));
-  return { vehicles: vehicles, records: records, parts: parts, requests: requests, restrict: restrict };
+  const purchases = mtRead_('purchases').filter(x => !restrict || restrict.includes(x.station));
+  return { vehicles: vehicles, records: records, parts: parts, requests: requests, purchases: purchases, restrict: restrict };
 }
 function mtClean_(arr) { return arr.map(o => { const x = Object.assign({}, o); delete x._row; return x; }); }
 
@@ -4194,7 +4206,7 @@ function mtLoadAll_impl_(requesterUsername) {
       stations: stations, vehicles: vehicles, records: mtClean_(d.records), parts: mtClean_(d.parts), rates: mtGetRates_(),
       due: mtDueList_(d.vehicles, d.records, d.parts, field, today), docs: mtDocAlerts_(d.vehicles, today),
       candidates: candidates, drivers: people.drivers, supervisors: people.supervisors,
-      requests: mtClean_(d.requests), userEmail: user.username, hasMySig: !!mtMySigUrl_(user.username),
+      requests: mtClean_(d.requests), purchases: mtClean_(d.purchases), userEmail: user.username, hasMySig: !!mtMySigUrl_(user.username),
       groupStations: user.role === 'Admin' ? sfGroupStations_() : [], isAdmin: user.role === 'Admin'
     } };
   } catch (e) {
@@ -4664,6 +4676,159 @@ function mtSignRequest_impl_(requesterUsername, id, slot, payload) {
     }
     row.sigs = JSON.stringify(sg);
     mtPut_('requests', row, row._row);
+    lock.releaseLock();
+    return mtLoadAll(requesterUsername);
+  } catch (e) {
+    try { lock.releaseLock(); } catch (x) {}
+    return { success: false, error: e.toString() };
+  }
+}
+
+/* ==================== 🛒 ໃບສະເໜີຊື້ອະໄຫຼ່ ==================== */
+// ຂັ້ນຕອນ: ລໍຖ້າອະນຸມັດ → ອະນຸມັດ / ບໍ່ອະນຸມັດ → ສັ່ງຊື້ແລ້ວ → ຮັບເຄື່ອງແລ້ວ (ຫຼື ຍົກເລີກ ຕອນລໍຖ້າອະນຸມັດ)
+const MT_PR_STATUS = { pending: 'ລໍຖ້າອະນຸມັດ', approved: 'ອະນຸມັດແລ້ວ', rejected: 'ບໍ່ອະນຸມັດ', ordered: 'ສັ່ງຊື້ແລ້ວ', received: 'ຮັບເຄື່ອງແລ້ວ', cancelled: 'ຍົກເລີກ' };
+const MT_PR_URGENCY = { normal: 'ປົກກະຕິ', urgent: 'ດ່ວນ', critical: 'ດ່ວນທີ່ສຸດ' };
+function mtPrMine_(user, x) { return String(x.createdByEmail || '').toLowerCase() === String(user.username || '').toLowerCase(); }
+function mtPrFind_(user, id) {
+  const x = mtScoped_(user).purchases.find(p => p.id === id);
+  if (!x) throw new Error('ບໍ່ພົບໃບສະເໜີຊື້ ຫຼື ທ່ານບໍ່ມີສິດ');
+  return mtRead_('purchases').find(p => p.id === id);
+}
+
+/** ສົ່ງ / ແກ້ໄຂ ໃບສະເໜີຊື້ອະໄຫຼ່ (ແກ້ໄດ້ສະເພາະຕອນ "ລໍຖ້າອະນຸມັດ", ໂດຍຜູ້ສົ່ງ ຫຼື ຜູ້ມີສິດແກ້ໄຂໃບສະເໜີ) */
+function mtSavePurchase_impl_(requesterUsername, obj, files, notify) {
+  const lock = LockService.getScriptLock();
+  try {
+    const user = requireActiveUser_(requesterUsername);
+    const isEdit = !!(obj && obj.id);
+    if (!mtCan_(user, 'purchase', 'edit') && !(isEdit && mtCan_(user, 'reqEdit', 'edit'))) throw new Error('ທ່ານບໍ່ມີສິດສົ່ງໃບສະເໜີຊື້ອະໄຫຼ່');
+    const restrict = mtRestrict_(user);
+    const o = mtNorm_('purchases', obj);
+    if (!o.date) throw new Error('ກະລຸນາໃສ່ວັນທີ');
+    if (o.plate) {
+      const veh = mtEnsureVehicle_(user, o.plate);
+      if (!veh) throw new Error('ບໍ່ພົບລົດ ' + o.plate + ' ໃນຖານຂໍ້ມູນລົດ');
+      o.plate = veh.plate; if (!o.station) o.station = veh.station;
+    }
+    if (!o.station) throw new Error('ກະລຸນາເລືອກສະໜາມ');
+    if (restrict && !restrict.includes(o.station)) throw new Error('ທ່ານບໍ່ມີສິດໃນສະໜາມ ' + o.station);
+    if (!MT_PR_URGENCY[o.urgency]) o.urgency = 'normal';
+    if (!o.requestedBy) o.requestedBy = user.name;
+
+    const rates = mtGetRates_();
+    let items = [];
+    try { items = JSON.parse(o.items || '[]'); } catch (e) { items = []; }
+    items = (Array.isArray(items) ? items : []).map(it => ({
+      name: String(it.name || '').trim().slice(0, 120), partNo: String(it.partNo || '').trim().slice(0, 60),
+      qty: Number(it.qty) || 0, uom: String(it.uom || '').trim().slice(0, 20), price: Number(it.price) || 0,
+      cur: ['LAK', 'THB', 'USD', 'CNY'].includes(it.cur) ? it.cur : 'LAK' })).filter(it => it.name).slice(0, 50);
+    if (!items.length) throw new Error('ກະລຸນາໃສ່ລາຍການອະໄຫຼ່ຢ່າງໜ້ອຍ 1 ລາຍການ');
+    items.forEach(it => { if (it.qty <= 0) throw new Error('ຈຳນວນຂອງ "' + it.name + '" ຕ້ອງຫຼາຍກວ່າ 0'); if (it.price < 0) throw new Error('ລາຄາຕ້ອງບໍ່ຕິດລົບ'); });
+    o.items = JSON.stringify(items);
+    o.estTotalLAK = Math.round(items.reduce((t, it) => t + mtToLAK_(it.qty * it.price, it.cur, rates), 0));
+
+    const newUrls = [];
+    (files || []).filter(f => f && f.fileData && f.fileName).forEach(f => { try { newUrls.push(uploadToDrive(f.fileData, 'PR_' + f.fileName, o.plate || o.station)); } catch (e) { Logger.log('pr upload: ' + e); } });
+
+    lock.waitLock(20000);
+    const all = mtRead_('purchases');
+    const old = o.id ? all.find(x => x.id === o.id) : null;
+    if (o.id && !old) throw new Error('ບໍ່ພົບໃບສະເໜີຊື້');
+    if (old) {
+      if (old.status !== 'pending') throw new Error('ໃບສະເໜີນີ້ຖືກພິຈາລະນາແລ້ວ — ແກ້ໄຂບໍ່ໄດ້');
+      if (!mtPrMine_(user, old) && !mtCan_(user, 'reqEdit', 'edit')) throw new Error('ແກ້ໄຂໄດ້ສະເພາະຜູ້ສົ່ງ ຫຼື ຜູ້ມີສິດແກ້ໄຂໃບສະເໜີ');
+      if (restrict && !restrict.includes(old.station)) throw new Error('ທ່ານບໍ່ມີສິດໃນໃບສະເໜີນີ້');
+      ['id', 'prNo', 'status', 'approver', 'decidedAt', 'approvedLAK', 'decisionNote', 'poNo', 'orderedAt', 'orderedBy', 'receivedAt', 'receivedBy', 'actualLAK', 'createdAt', 'createdBy', 'createdByEmail'].forEach(k => { o[k] = old[k]; });
+    } else {
+      o.id = mtNewId_('PR');
+      const ym = o.date.slice(2, 4) + o.date.slice(5, 7);
+      const seq = all.filter(x => String(x.prNo).indexOf('PR' + ym + '-') === 0).length + 1;
+      o.prNo = 'PR' + ym + '-' + ('00' + seq).slice(-3);
+      o.status = 'pending';
+      ['approver', 'decidedAt', 'approvedLAK', 'decisionNote', 'poNo', 'orderedAt', 'orderedBy', 'receivedAt', 'receivedBy', 'actualLAK'].forEach(k => { o[k] = ''; });
+      o.createdAt = mtNow_(); o.createdBy = user.name; o.createdByEmail = user.username;
+    }
+    const keep = String(o.photos || '').split(',').map(x => x.trim()).filter(u => /^https:\/\/[^\s"'<>]+$/.test(u));
+    o.photos = keep.concat(newUrls).join(', ');
+    mtPut_('purchases', o, old ? old._row : -1);
+    lock.releaseLock();
+
+    if (notify && notify.line && !old) {
+      sendLineNotification(`🛒 ໃບສະເໜີຊື້ອະໄຫຼ່ໃໝ່ ${o.prNo}\n📍 ${o.station}${o.plate ? ' · 🚗 ' + o.plate : ''}\n` +
+        `${o.urgency === 'normal' ? '🟢' : o.urgency === 'urgent' ? '🟠' : '🔴'} ຄວາມດ່ວນ: ${MT_PR_URGENCY[o.urgency]}${o.neededBy ? ' · ຕ້ອງການພາຍໃນ ' + o.neededBy : ''}\n` +
+        items.slice(0, 10).map(it => `• ${it.name} × ${it.qty}${it.uom ? ' ' + it.uom : ''}`).join('\n') + (items.length > 10 ? `\n… ອີກ ${items.length - 10} ລາຍການ` : '') +
+        `\n💰 ຄາດຄະເນ: ${Number(o.estTotalLAK || 0).toLocaleString('en-US')} ກີບ\n✍️ ຜູ້ສະເໜີ: ${o.requestedBy}\n⏳ ລໍຖ້າອະນຸມັດ`);
+    }
+    const res = mtLoadAll(requesterUsername); res.savedId = o.id; res.prNo = o.prNo;
+    return res;
+  } catch (e) {
+    try { lock.releaseLock(); } catch (x) {}
+    return { success: false, error: e.toString() };
+  }
+}
+
+/** ອະນຸມັດ / ບໍ່ອະນຸມັດ ໃບສະເໜີຊື້ (ໃຊ້ສິດ "ອະນຸມັດໃບສະເໜີ" ດຽວກັບໃບສະເໜີສ້ອມແປງ) */
+function mtDecidePurchase_impl_(requesterUsername, id, decision, payload, notify) {
+  const lock = LockService.getScriptLock();
+  try {
+    const user = mtRequire_(requesterUsername, 'approve', 'edit');
+    if (['approved', 'rejected'].indexOf(decision) < 0) throw new Error('ການຕັດສິນບໍ່ຖືກຕ້ອງ');
+    payload = payload || {};
+    lock.waitLock(20000);
+    const row = mtPrFind_(user, id);
+    if (row.status !== 'pending') throw new Error('ໃບສະເໜີນີ້ຖືກພິຈາລະນາແລ້ວ (' + (MT_PR_STATUS[row.status] || row.status) + ')');
+    const note = String(payload.note || '').trim().slice(0, 500);
+    if (decision === 'rejected' && !note) throw new Error('ກະລຸນາໃສ່ເຫດຜົນທີ່ບໍ່ອະນຸມັດ');
+    const amt = payload.approvedLAK === '' || payload.approvedLAK === undefined ? Number(row.estTotalLAK) || 0 : Number(payload.approvedLAK);
+    if (decision === 'approved' && (isNaN(amt) || amt < 0)) throw new Error('ວົງເງິນອະນຸມັດບໍ່ຖືກຕ້ອງ');
+    row.status = decision; row.approver = user.name; row.decidedAt = mtNow_(); row.decisionNote = note;
+    row.approvedLAK = decision === 'approved' ? Math.round(amt) : '';
+    mtPut_('purchases', row, row._row);
+    lock.releaseLock();
+    if (notify && notify.line) {
+      sendLineNotification(`${decision === 'approved' ? '✅ ອະນຸມັດ' : '❌ ບໍ່ອະນຸມັດ'} ໃບສະເໜີຊື້ອະໄຫຼ່ ${row.prNo}\n📍 ${row.station}${row.plate ? ' · 🚗 ' + row.plate : ''}\n` +
+        (decision === 'approved' ? `💰 ວົງເງິນອະນຸມັດ: ${Math.round(amt).toLocaleString('en-US')} ກີບ\n` : '') + (note ? `💬 ${note}\n` : '') + `👤 ໂດຍ: ${user.name}`);
+    }
+    return mtLoadAll(requesterUsername);
+  } catch (e) {
+    try { lock.releaseLock(); } catch (x) {}
+    return { success: false, error: e.toString() };
+  }
+}
+
+/** ອັບເດດຂັ້ນຕອນ: ordered (ສັ່ງຊື້ແລ້ວ) | received (ຮັບເຄື່ອງແລ້ວ) | cancelled (ຍົກເລີກ) */
+function mtUpdatePurchase_impl_(requesterUsername, id, status, payload) {
+  const lock = LockService.getScriptLock();
+  try {
+    const user = requireActiveUser_(requesterUsername);
+    if (['ordered', 'received', 'cancelled'].indexOf(status) < 0) throw new Error('ສະຖານະບໍ່ຖືກຕ້ອງ');
+    payload = payload || {};
+    lock.waitLock(20000);
+    const row = mtPrFind_(user, id);
+    if (status === 'cancelled') {
+      if (row.status !== 'pending') throw new Error('ຍົກເລີກໄດ້ສະເພາະໃບສະເໜີທີ່ຍັງລໍຖ້າອະນຸມັດ');
+      if (!(mtPrMine_(user, row) && mtCan_(user, 'purchase', 'edit')) && !mtCan_(user, 'reqEdit', 'edit')) throw new Error('ຍົກເລີກໄດ້ສະເພາະຜູ້ສົ່ງ ຫຼື ຜູ້ມີສິດແກ້ໄຂໃບສະເໜີ');
+      row.status = 'cancelled'; row.decidedAt = mtNow_(); row.decisionNote = 'ຍົກເລີກໂດຍ ' + user.name;
+    } else {
+      if (!mtCan_(user, 'approve', 'edit') && !mtCan_(user, 'form', 'edit')) throw new Error('ທ່ານບໍ່ມີສິດອັບເດດການສັ່ງຊື້ / ຮັບເຄື່ອງ');
+      if (status === 'ordered') {
+        if (row.status !== 'approved') throw new Error('ສັ່ງຊື້ໄດ້ສະເພາະໃບສະເໜີທີ່ອະນຸມັດແລ້ວ');
+        row.poNo = String(payload.poNo || '').trim().slice(0, 60);
+        if (payload.supplier) row.supplier = String(payload.supplier).trim().slice(0, 120);
+        row.orderedAt = mtNow_(); row.orderedBy = user.name;
+      } else {
+        if (['approved', 'ordered'].indexOf(row.status) < 0) throw new Error('ຮັບເຄື່ອງໄດ້ສະເພາະໃບທີ່ອະນຸມັດ ຫຼື ສັ່ງຊື້ແລ້ວ');
+        const act = payload.actualLAK === '' || payload.actualLAK === undefined ? '' : Number(payload.actualLAK);
+        if (act !== '' && (isNaN(act) || act < 0)) throw new Error('ລາຄາຈິງບໍ່ຖືກຕ້ອງ');
+        row.actualLAK = act === '' ? '' : Math.round(act);
+        if (payload.poNo) row.poNo = String(payload.poNo).trim().slice(0, 60);
+        if (!row.orderedAt) { row.orderedAt = mtNow_(); row.orderedBy = user.name; }
+        row.receivedAt = mtNow_(); row.receivedBy = user.name;
+      }
+      row.status = status;
+      if (payload.note) row.note = String(payload.note).trim().slice(0, 500);
+    }
+    mtPut_('purchases', row, row._row);
     lock.releaseLock();
     return mtLoadAll(requesterUsername);
   } catch (e) {
@@ -5226,11 +5391,14 @@ function mtSaveRates() { return sfCall_('mtSaveRates', mtSaveRates_impl_, argume
 function mtCheckDueAndNotify() { return sfCall_('mtCheckDueAndNotify', mtCheckDueAndNotify_impl_, arguments); }
 function mtInstallDailyTrigger() { return sfCall_('mtInstallDailyTrigger', mtInstallDailyTrigger_impl_, arguments); }
 function mtSignRequest() { return sfCall_('mtSignRequest', mtSignRequest_impl_, arguments); }
+function mtSavePurchase() { return sfCall_('mtSavePurchase', mtSavePurchase_impl_, arguments); }
+function mtDecidePurchase() { return sfCall_('mtDecidePurchase', mtDecidePurchase_impl_, arguments); }
+function mtUpdatePurchase() { return sfCall_('mtUpdatePurchase', mtUpdatePurchase_impl_, arguments); }
 function sfSelectCompany() { return sfCall_('sfSelectCompany', sfSelectCompany_impl_, arguments); }
 function sfSetupCompany() { return sfCall_('sfSetupCompany', sfSetupCompany_impl_, arguments); }
 function sfSetupCompanies() { return sfCall_('sfSetupCompanies', sfSetupCompanies_impl_, arguments); }
 function sfWeeklyBackup() { return sfCall_('sfWeeklyBackup', sfWeeklyBackup_impl_, arguments); }
 function sfInstallBackupTrigger() { return sfCall_('sfInstallBackupTrigger', sfInstallBackupTrigger_impl_, arguments); }
 function sfLogoutEveryone() { return sfCall_('sfLogoutEveryone', sfLogoutEveryone_impl_, arguments); }
-var SF_FN_SPEC = {"setAdminUserAccess": "auth", "sfSetUserPassword": "auth", "sfSetupSuperAdmin": "owner", "refreshMyPermissions": "auth", "revealUserPassword": "auth", "calculateHoursDiff": "open", "autoClearLoginHistory": "owner", "checkLogin": "open", "recordLoginTime": "owner", "recordLogout": "auth", "getInitialData": "auth", "getFilteredDataByDate": "auth", "addNewStation": "auth", "createNewUser": "auth", "updateUserRole": "auth", "deleteUser": "auth", "exportToPDF": "auth", "exportStockInPDF": "auth", "processForm": "auth", "updateFormRecord": "auth", "checkUploadFolder": "owner", "uploadToDrive": "owner", "fixOldImageUrls": "owner", "deleteRecord": "auth", "saveStockIn": "auth", "getStockInHistory": "auth", "deleteStockInRow": "auth", "deleteImportFuelRow": "auth", "updateStockInRow": "auth", "getStockSummaryByStation": "auth", "getDailyReportRange": "auth", "saveReportSignature": "auth", "getDailyReport": "auth", "saveDailyReportSignature": "auth", "addDailyReportPhotos": "auth", "deleteDailyReportPhoto": "auth", "dailyLowStockCheck": "owner", "getLowStockSettings": "auth", "saveLowStockSettings": "auth", "sendTestLowStockAlert": "auth", "setLowStockDailyTrigger": "auth", "onOpen": "open", "setupDailyLowStockTrigger": "owner", "runLowStockCheckManually": "owner", "runLowStockCheckForAllStations": "auth", "sendLineNotification": "owner", "sendEmailNotification": "owner", "getUserProfilePhoto": "auth", "removeProfilePhoto": "auth", "updateProfilePhoto": "auth", "updateMyProfile": "auth", "getMySignature": "auth", "updateMySignature": "auth", "removeMySignature": "auth", "getMonthlyReport": "auth", "getYearlyReport": "auth", "getVehicleLastLevel": "auth", "saveVehicleUsage": "auth", "getVehicleUsageList": "auth", "deleteVehicleUsage": "auth", "addPerson": "auth", "getVehicleStationAdmin": "auth", "saveVehicleStations": "auth", "rtSetup": "owner", "rtLoadAll": "auth", "rtSave": "auth", "rtDelete": "auth", "rtComputeBilling": "auth", "rtSaveInvoices": "auth", "rtFieldDay": "auth", "rtCheckExpiringContracts": "owner", "rtInstallDailyTrigger": "owner", "mtSetup": "owner", "mtLoadAll": "auth", "mtSaveVehicle": "auth", "mtQuickAddVehicle": "auth", "mtImportVehicles": "auth", "mtSaveRecord": "auth", "mtDelete": "auth", "mtSaveRequest": "auth", "mtDecideRequest": "auth", "mtCancelRequest": "auth", "mtSaveRates": "auth", "mtCheckDueAndNotify": "owner", "mtInstallDailyTrigger": "owner", "mtSignRequest": "auth", "sfSelectCompany": "auth", "sfSetupCompany": "auth", "sfSetupCompanies": "owner", "sfWeeklyBackup": "owner", "sfInstallBackupTrigger": "owner", "sfLogoutEveryone": "owner"};
-var SF_AUDIT = {"processForm": 1, "updateFormRecord": 1, "deleteRecord": 1, "saveStockIn": 1, "updateStockInRow": 1, "deleteStockInRow": 1, "deleteImportFuelRow": 1, "addNewStation": 1, "createNewUser": 1, "updateUserRole": 1, "deleteUser": 1, "revealUserPassword": 1, "saveVehicleUsage": 1, "deleteVehicleUsage": 1, "saveVehicleStations": 1, "addPerson": 1, "saveLowStockSettings": 1, "setLowStockDailyTrigger": 1, "saveReportSignature": 1, "saveDailyReportSignature": 1, "addDailyReportPhotos": 1, "deleteDailyReportPhoto": 1, "updateMyProfile": 1, "rtSave": 1, "rtDelete": 1, "rtSaveInvoices": 1, "mtSaveVehicle": 1, "mtQuickAddVehicle": 1, "setAdminUserAccess": 1, "sfSelectCompany": 1, "sfSetUserPassword": 1, "sfSetupCompany": 1, "mtImportVehicles": 1, "mtSaveRecord": 1, "mtSaveRequest": 1, "mtDecideRequest": 1, "mtCancelRequest": 1, "mtSignRequest": 1, "mtDelete": 1, "mtSaveRates": 1, "recordLogout": 1};
+var SF_FN_SPEC = {"setAdminUserAccess": "auth", "sfSetUserPassword": "auth", "sfSetupSuperAdmin": "owner", "refreshMyPermissions": "auth", "revealUserPassword": "auth", "calculateHoursDiff": "open", "autoClearLoginHistory": "owner", "checkLogin": "open", "recordLoginTime": "owner", "recordLogout": "auth", "getInitialData": "auth", "getFilteredDataByDate": "auth", "addNewStation": "auth", "createNewUser": "auth", "updateUserRole": "auth", "deleteUser": "auth", "exportToPDF": "auth", "exportStockInPDF": "auth", "processForm": "auth", "updateFormRecord": "auth", "checkUploadFolder": "owner", "uploadToDrive": "owner", "fixOldImageUrls": "owner", "deleteRecord": "auth", "saveStockIn": "auth", "getStockInHistory": "auth", "deleteStockInRow": "auth", "deleteImportFuelRow": "auth", "updateStockInRow": "auth", "getStockSummaryByStation": "auth", "getDailyReportRange": "auth", "saveReportSignature": "auth", "getDailyReport": "auth", "saveDailyReportSignature": "auth", "addDailyReportPhotos": "auth", "deleteDailyReportPhoto": "auth", "dailyLowStockCheck": "owner", "getLowStockSettings": "auth", "saveLowStockSettings": "auth", "sendTestLowStockAlert": "auth", "setLowStockDailyTrigger": "auth", "onOpen": "open", "setupDailyLowStockTrigger": "owner", "runLowStockCheckManually": "owner", "runLowStockCheckForAllStations": "auth", "sendLineNotification": "owner", "sendEmailNotification": "owner", "getUserProfilePhoto": "auth", "removeProfilePhoto": "auth", "updateProfilePhoto": "auth", "updateMyProfile": "auth", "getMySignature": "auth", "updateMySignature": "auth", "removeMySignature": "auth", "getMonthlyReport": "auth", "getYearlyReport": "auth", "getVehicleLastLevel": "auth", "saveVehicleUsage": "auth", "getVehicleUsageList": "auth", "deleteVehicleUsage": "auth", "addPerson": "auth", "getVehicleStationAdmin": "auth", "saveVehicleStations": "auth", "rtSetup": "owner", "rtLoadAll": "auth", "rtSave": "auth", "rtDelete": "auth", "rtComputeBilling": "auth", "rtSaveInvoices": "auth", "rtFieldDay": "auth", "rtCheckExpiringContracts": "owner", "rtInstallDailyTrigger": "owner", "mtSetup": "owner", "mtLoadAll": "auth", "mtSaveVehicle": "auth", "mtQuickAddVehicle": "auth", "mtImportVehicles": "auth", "mtSaveRecord": "auth", "mtDelete": "auth", "mtSaveRequest": "auth", "mtDecideRequest": "auth", "mtCancelRequest": "auth", "mtSaveRates": "auth", "mtCheckDueAndNotify": "owner", "mtInstallDailyTrigger": "owner", "mtSignRequest": "auth", "mtSavePurchase": "auth", "mtDecidePurchase": "auth", "mtUpdatePurchase": "auth", "sfSelectCompany": "auth", "sfSetupCompany": "auth", "sfSetupCompanies": "owner", "sfWeeklyBackup": "owner", "sfInstallBackupTrigger": "owner", "sfLogoutEveryone": "owner"};
+var SF_AUDIT = {"processForm": 1, "updateFormRecord": 1, "deleteRecord": 1, "saveStockIn": 1, "updateStockInRow": 1, "deleteStockInRow": 1, "deleteImportFuelRow": 1, "addNewStation": 1, "createNewUser": 1, "updateUserRole": 1, "deleteUser": 1, "revealUserPassword": 1, "saveVehicleUsage": 1, "deleteVehicleUsage": 1, "saveVehicleStations": 1, "addPerson": 1, "saveLowStockSettings": 1, "setLowStockDailyTrigger": 1, "saveReportSignature": 1, "saveDailyReportSignature": 1, "addDailyReportPhotos": 1, "deleteDailyReportPhoto": 1, "updateMyProfile": 1, "rtSave": 1, "rtDelete": 1, "rtSaveInvoices": 1, "mtSaveVehicle": 1, "mtQuickAddVehicle": 1, "setAdminUserAccess": 1, "sfSelectCompany": 1, "sfSetUserPassword": 1, "sfSetupCompany": 1, "mtImportVehicles": 1, "mtSaveRecord": 1, "mtSaveRequest": 1, "mtDecideRequest": 1, "mtCancelRequest": 1, "mtSignRequest": 1, "mtSavePurchase": 1, "mtDecidePurchase": 1, "mtUpdatePurchase": 1, "mtDelete": 1, "mtSaveRates": 1, "recordLogout": 1};

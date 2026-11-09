@@ -551,6 +551,9 @@
         <li class="nav-item w-100" id="mt-request-tab-li" data-perm="mtRequest|mtApprove|mtReqEdit|mtSigRequester|mtSigSite|mtSigMech|mtSigApprover" style="display:none;">
           <button class="nav-link w-100" id="mt-request-tab" onclick="switchTab('mt-request')"><i class="bi bi-clipboard-plus"></i> ໃບສະເໜີສ້ອມແປງ</button>
         </li>
+        <li class="nav-item w-100" id="mt-purchase-tab-li" data-perm="mtPurchase|mtApprove" style="display:none;">
+          <button class="nav-link w-100" id="mt-purchase-tab" onclick="switchTab('mt-purchase')"><i class="bi bi-cart-plus"></i> ໃບສະເໜີຊື້ອະໄຫຼ່</button>
+        </li>
         <li class="nav-item w-100" id="mt-form-tab-li" data-perm="mtForm" style="display:none;">
           <button class="nav-link w-100" id="mt-form-tab" onclick="switchTab('mt-form')"><i class="bi bi-wrench-adjustable"></i> ບັນທຶກການສ້ອມແປງ</button>
         </li>
@@ -2085,6 +2088,11 @@
           #mt-content .mt-tl .it:before{content:"";position:absolute;left:-21px;top:4px;width:11px;height:11px;border-radius:50%;background:#fff;border:3px solid var(--accent-color)}
           @media print{#rtPrint .mt-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0}#rtPrint .mt-card{border:1px solid #444;padding:6px;text-align:center}#rtPrint .mt-card .v{font-size:18px;font-weight:700}#rtPrint .mt-vcard{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:12px}#rtPrint .mt-vcard span{display:block;font-size:10px;color:#555}#rtPrint .mt-tl .it{border-bottom:1px dotted #999;padding:5px 0;font-size:12px}#rtPrint .mt-mini{font-size:11px;color:#333}#rtPrint [class*=mt-need-]{display:none}}
           #mt-content.mt-no-request .mt-need-request,#mt-content.mt-no-approve .mt-need-approve{display:none!important}
+          #mt-content.mt-no-purchase .mt-need-purchase{display:none!important}
+          #mt-content .mt-prrow{display:grid;grid-template-columns:2.2fr 1.1fr .6fr .7fr .9fr .8fr .9fr auto;gap:6px;align-items:end;padding:6px 0;border-bottom:1px dashed #e2e8f0}
+          #mt-content .mt-prrow label{font-size:11px;font-weight:600;color:#64748b;display:flex;flex-direction:column;gap:2px;margin:0}
+          #mt-content .mt-prrow .amt{font-size:12.5px;font-weight:700;text-align:right;padding-bottom:6px;font-variant-numeric:tabular-nums}
+          @media (max-width:768px){#mt-content .mt-prrow{grid-template-columns:1fr 1fr 1fr}#mt-content .mt-prrow .pn{grid-column:1/-1}}
           #mt-content .mt-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
           #mt-content .mt-chips button{border:1px solid #cbd5e1;background:#fff;border-radius:99px;padding:3px 12px;font-size:12.5px;font-weight:600;color:#475569}
           #mt-content .mt-chips button.on{background:var(--primary-color);border-color:var(--primary-color);color:#fff}
@@ -2217,6 +2225,76 @@
               <tbody id="mtQBody"></tbody>
             </table></div>
             <p class="mt-mini mt-2 mb-0">ຂັ້ນຕອນ: ສົ່ງໃບສະເໜີ → ຜູ້ມີສິດ "ອະນຸມັດໃບສະເໜີ" ອະນຸມັດ/ບໍ່ອະນຸມັດ → ກົດ "ສ້າງໃບສ້ອມ" ເພື່ອບັນທຶກການສ້ອມຈິງ → ສະຖານະປ່ຽນເປັນ "ກຳລັງສ້ອມ" ຫຼື "ສ້ອມສຳເລັດ" ອັດຕະໂນມັດ.</p>
+          </div>
+        </section>
+
+        <!-- ===== 1.6 ໃບສະເໜີຊື້ອະໄຫຼ່ ===== -->
+        <section data-sec="purchase">
+          <div class="mt-cards">
+            <div class="mt-card" style="--c:#ff8c00"><div class="t">ລໍຖ້າອະນຸມັດ</div><div class="v" id="mtPCPend">–</div><div class="s" id="mtPCPendS"></div></div>
+            <div class="mt-card" style="--c:#0369a1"><div class="t">ອະນຸມັດແລ້ວ · ລໍຖ້າສັ່ງຊື້</div><div class="v" id="mtPCAppr">–</div><div class="s" id="mtPCApprS"></div></div>
+            <div class="mt-card" style="--c:#7c3aed"><div class="t">ສັ່ງຊື້ແລ້ວ · ລໍຖ້າຮັບເຄື່ອງ</div><div class="v" id="mtPCOrd">–</div><div class="s" id="mtPCOrdS"></div></div>
+            <div class="mt-card" style="--c:#2ecc71"><div class="t">ວົງເງິນອະນຸມັດເດືອນນີ້ (ກີບ)</div><div class="v" id="mtPCAmt">–</div><div class="s" id="mtPCAmtS"></div></div>
+          </div>
+
+          <form id="mtPForm" class="mt-need-purchase" onsubmit="return MT.savePurchase(event)">
+            <input type="hidden" name="id"><input type="hidden" name="photos" id="mtPPhotosKeep">
+            <div class="mt-box">
+              <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                <h6 class="mb-0" id="mtPTitle"><i class="bi bi-cart-plus"></i> ໃບສະເໜີຊື້ອະໄຫຼ່ / ຂໍອະນຸມັດຊື້</h6>
+                <span class="mt-mini">ສົ່ງແລ້ວ ລໍຖ້າຜູ້ມີສິດອະນຸມັດ ກ່ອນສັ່ງຊື້</span>
+              </div>
+              <div class="mt-grid">
+                <label>ວັນທີ *<input class="form-control form-control-sm" type="date" name="date" required></label>
+                <label>ຕ້ອງການພາຍໃນວັນທີ<input class="form-control form-control-sm" type="date" name="neededBy"></label>
+                <label>ສະໜາມ *<select class="form-select form-select-sm" name="station" id="mtPStation" required></select></label>
+                <label>ຄວາມດ່ວນ *<select class="form-select form-select-sm" name="urgency"><option value="normal">🟢 ປົກກະຕິ</option><option value="urgent">🟠 ດ່ວນ</option><option value="critical">🔴 ດ່ວນທີ່ສຸດ</option></select></label>
+                <label class="mt-span2">ສຳລັບລົດ-ກົນຈັກ (ບໍ່ບັງຄັບ)<select class="form-select form-select-sm" name="plate" id="mtPPlate" onchange="MT.pVehicle()"></select></label>
+                <label>ອ້າງອີງໃບສະເໜີສ້ອມ<input class="form-control form-control-sm" name="requestNo" list="mtPReqList" placeholder="RQ…"></label>
+                <label>ຮ້ານ / ຜູ້ສະໜອງ ທີ່ສະເໜີ<input class="form-control form-control-sm" name="supplier" list="mtShops"></label>
+                <label>ຜູ້ສະເໜີ<input class="form-control form-control-sm" name="requestedBy" list="mtDrivers"></label>
+                <label>ເບີໂທຕິດຕໍ່<input class="form-control form-control-sm" name="phone" inputmode="tel"></label>
+                <label class="mt-wide">ເຫດຜົນ / ຈຸດປະສົງການຊື້<textarea class="form-control form-control-sm" name="purpose" rows="2" placeholder="ຕົວຢ່າງ: ປ່ຽນຕາມກຳນົດບຳລຸງຮັກສາ, ສຳຮອງໄວ້ໃນສາງ, ອະໄຫຼ່ເສຍ"></textarea></label>
+              </div>
+              <datalist id="mtPReqList"></datalist>
+            </div>
+            <div class="mt-box">
+              <div class="d-flex justify-content-between align-items-center mb-1"><h6 class="mb-0"><i class="bi bi-box-seam"></i> ລາຍການອະໄຫຼ່ທີ່ຂໍຊື້</h6>
+                <button type="button" class="btn btn-sm btn-outline-primary fw-bold" onclick="MT.pAddItem()"><i class="bi bi-plus"></i> ເພີ່ມລາຍການ</button></div>
+              <div id="mtPItems"></div>
+              <div class="d-flex flex-wrap justify-content-end align-items-end gap-2 mt-3">
+                <div class="text-end"><div class="mt-mini" id="mtPBreak"></div><span class="mt-mini">ລວມຄາດຄະເນ: </span><span class="mt-total" id="mtPTotal">0 ກີບ</span></div>
+              </div>
+            </div>
+            <div class="mt-box">
+              <h6><i class="bi bi-paperclip"></i> ຮູບອະໄຫຼ່ / ໃບສະເໜີລາຄາ</h6>
+              <div class="mt-photos mb-2" id="mtPPhotoList"></div>
+              <input class="form-control form-control-sm" type="file" id="mtPFiles" accept="image/*,application/pdf" multiple>
+              <hr>
+              <div class="d-flex flex-wrap justify-content-end gap-2">
+                <button type="button" class="btn btn-sm btn-secondary" onclick="MT.newPurchase()">ລ້າງຟອມ</button>
+                <button class="btn btn-sm btn-warning fw-bold px-3" id="mtPSaveBtn">📨 ສົ່ງໃບສະເໜີຊື້</button>
+              </div>
+            </div>
+          </form>
+
+          <div class="mt-box">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+              <h6 class="mb-0" id="mtPCount"><i class="bi bi-list-check"></i> ລາຍການໃບສະເໜີຊື້</h6>
+              <button class="btn btn-sm btn-success fw-bold" onclick="MT.exportPurchases()"><i class="bi bi-file-earmark-excel"></i> Export Excel</button>
+            </div>
+            <div class="mt-chips" id="mtPChips"></div>
+            <div class="mt-filters">
+              <label>ສະໜາມ<select class="form-select form-select-sm" id="mtPSite" onchange="MT.renderPurchases()"></select></label>
+              <label>ຈາກວັນທີ<input class="form-control form-control-sm" type="date" id="mtPFrom" onchange="MT.renderPurchases()"></label>
+              <label>ຫາວັນທີ<input class="form-control form-control-sm" type="date" id="mtPTo" onchange="MT.renderPurchases()"></label>
+              <label>ຄົ້ນຫາ<input class="form-control form-control-sm" id="mtPQ" oninput="MT.renderPurchases()" placeholder="ເລກທີ, ອະໄຫຼ່, ທະບຽນ, ຮ້ານ, ຜູ້ສະເໜີ…"></label>
+            </div>
+            <div class="mt-tbl"><table>
+              <thead><tr><th>ເລກທີ / ວັນທີ</th><th>ສະໜາມ / ລົດ</th><th>ລາຍການອະໄຫຼ່</th><th>ຄວາມດ່ວນ</th><th class="n">ຄາດຄະເນ (ກີບ)</th><th>ສະຖານະ</th><th>ຜູ້ສະເໜີ</th><th></th></tr></thead>
+              <tbody id="mtPBody"></tbody>
+            </table></div>
+            <p class="mt-mini mt-2 mb-0">ຂັ້ນຕອນ: ສົ່ງໃບສະເໜີຊື້ → ຜູ້ມີສິດ "ອະນຸມັດໃບສະເໜີ" ອະນຸມັດ/ບໍ່ອະນຸມັດ → ກົດ "ສັ່ງຊື້ແລ້ວ" (ໃສ່ເລກໃບສັ່ງຊື້) → ກົດ "ຮັບເຄື່ອງແລ້ວ" (ໃສ່ລາຄາຈິງ).</p>
           </div>
         </section>
 
@@ -2972,6 +3050,10 @@
                     <div class="col-6">
                       <label class="form-label small mb-1 d-block" for="perm_mtRequest">ສົ່ງໃບສະເໜີສ້ອມແປງ</label>
                       <select class="form-select form-select-sm" id="perm_mtRequest"><option value="none">ບໍ່ມີສິດ</option><option value="view">ເບິ່ງ</option><option value="edit">ແກ້ໄຂ</option></select>
+                    </div>
+                    <div class="col-6">
+                      <label class="form-label small mb-1 d-block" for="perm_mtPurchase">🛒 ສົ່ງໃບສະເໜີຊື້ອະໄຫຼ່</label>
+                      <select class="form-select form-select-sm" id="perm_mtPurchase"><option value="none">ບໍ່ມີສິດ</option><option value="view">ເບິ່ງ</option><option value="edit">ແກ້ໄຂ</option></select>
                     </div>
                     <div class="col-6">
                       <label class="form-label small mb-1 d-block" for="perm_mtApprove">🔐 ອະນຸມັດ / ບໍ່ອະນຸມັດ ໃບສະເໜີ</label>
@@ -4803,9 +4885,9 @@ function executeStockSubmit(formObj) {
   }
 
   const PERMISSION_LABELS = { recordOut: 'ບັນທຶກອອກ', recordIn: 'ບັນທຶກເຂົ້າ', dashboard: 'ແດຊບອດ', tableOut: 'ຕາຕະລາງອອກ', tableIn: 'ຕາຕະລາງເຂົ້າ', manageUsers: 'ຈັດການຜູ້ໃຊ້', stockSummary: 'ຄັງນ້ຳມັນຄົງເຫຼືອ', dailyReport: 'ລາຍງານປະຈຳວັນ', monthlyReport: 'ລາຍງານປະຈຳເດືອນ', yearlyReport: 'ລາຍງານປະຈຳປີ', vehicleUsage: 'ນຳໃຊ້ລົດ',
-    rentalContracts: 'ເຊົ່າ·ຜູ້ໃຫ້ເຊົ່າ ແລະ ສັນຍາ', rentalLogs: 'ເຊົ່າ·ບັນທຶກປະຈຳວັນ', rentalBilling: 'ເຊົ່າ·ຄິດໄລ່ຄ່າເຊົ່າ', rentalPayments: 'ເຊົ່າ·ການຈ່າຍຄ່າເຊົ່າ', rentalReport: 'ເຊົ່າ·ລາຍງານລົດເຊົ່າ', mtOverview: 'ສ້ອມ·ພາບລວມ ແລະ ກຳນົດປ່ຽນ', mtRequest: 'ສ້ອມ·ສົ່ງໃບສະເໜີສ້ອມແປງ', mtApprove: 'ສ້ອມ·🔐 ອະນຸມັດ / ບໍ່ອະນຸມັດ ໃບສະເໜີ', mtReqEdit: 'ສ້ອມ·🔐 ແກ້ໄຂ / ຍົກເລີກ ໃບສະເໜີ', mtSigRequester: 'ສ້ອມ·✍️ ລົງນາມ: ຜູ້ສະເໜີ', mtSigSite: 'ສ້ອມ·✍️ ລົງນາມ: ຫົວໜ້າສະໜາມ', mtSigMech: 'ສ້ອມ·✍️ ລົງນາມ: ພະແນກກົນຈັກ', mtSigApprover: 'ສ້ອມ·✍️ ລົງນາມ: ຜູ້ອະນຸມັດ', mtForm: 'ສ້ອມ·ບັນທຶກໃບສ້ອມໃໝ່', mtHistory: 'ສ້ອມ·ປະຫວັດ', mtVehicles: 'ສ້ອມ·ທະບຽນລົດ-ກົນຈັກ', mtReport: 'ສ້ອມ·ລາຍງານຄ່າສ້ອມແປງ' };
-  const LEVELED_PERMISSION_KEYS = ['tableOut', 'tableIn', 'rentalContracts', 'rentalLogs', 'rentalBilling', 'rentalPayments', 'rentalReport', 'mtOverview', 'mtRequest', 'mtApprove', 'mtReqEdit', 'mtSigRequester', 'mtSigSite', 'mtSigMech', 'mtSigApprover', 'mtForm', 'mtHistory', 'mtVehicles', 'mtReport'];
-  const MODULE_PERMISSION_GROUPS = { rental: ['rentalContracts', 'rentalLogs', 'rentalBilling', 'rentalPayments', 'rentalReport'], mt: ['mtOverview', 'mtRequest', 'mtApprove', 'mtReqEdit', 'mtSigRequester', 'mtSigSite', 'mtSigMech', 'mtSigApprover', 'mtForm', 'mtHistory', 'mtVehicles', 'mtReport'] };
+    rentalContracts: 'ເຊົ່າ·ຜູ້ໃຫ້ເຊົ່າ ແລະ ສັນຍາ', rentalLogs: 'ເຊົ່າ·ບັນທຶກປະຈຳວັນ', rentalBilling: 'ເຊົ່າ·ຄິດໄລ່ຄ່າເຊົ່າ', rentalPayments: 'ເຊົ່າ·ການຈ່າຍຄ່າເຊົ່າ', rentalReport: 'ເຊົ່າ·ລາຍງານລົດເຊົ່າ', mtOverview: 'ສ້ອມ·ພາບລວມ ແລະ ກຳນົດປ່ຽນ', mtRequest: 'ສ້ອມ·ສົ່ງໃບສະເໜີສ້ອມແປງ', mtPurchase: 'ສ້ອມ·ສົ່ງໃບສະເໜີຊື້ອະໄຫຼ່', mtApprove: 'ສ້ອມ·🔐 ອະນຸມັດ / ບໍ່ອະນຸມັດ ໃບສະເໜີ', mtReqEdit: 'ສ້ອມ·🔐 ແກ້ໄຂ / ຍົກເລີກ ໃບສະເໜີ', mtSigRequester: 'ສ້ອມ·✍️ ລົງນາມ: ຜູ້ສະເໜີ', mtSigSite: 'ສ້ອມ·✍️ ລົງນາມ: ຫົວໜ້າສະໜາມ', mtSigMech: 'ສ້ອມ·✍️ ລົງນາມ: ພະແນກກົນຈັກ', mtSigApprover: 'ສ້ອມ·✍️ ລົງນາມ: ຜູ້ອະນຸມັດ', mtForm: 'ສ້ອມ·ບັນທຶກໃບສ້ອມໃໝ່', mtHistory: 'ສ້ອມ·ປະຫວັດ', mtVehicles: 'ສ້ອມ·ທະບຽນລົດ-ກົນຈັກ', mtReport: 'ສ້ອມ·ລາຍງານຄ່າສ້ອມແປງ' };
+  const LEVELED_PERMISSION_KEYS = ['tableOut', 'tableIn', 'rentalContracts', 'rentalLogs', 'rentalBilling', 'rentalPayments', 'rentalReport', 'mtOverview', 'mtRequest', 'mtPurchase', 'mtApprove', 'mtReqEdit', 'mtSigRequester', 'mtSigSite', 'mtSigMech', 'mtSigApprover', 'mtForm', 'mtHistory', 'mtVehicles', 'mtReport'];
+  const MODULE_PERMISSION_GROUPS = { rental: ['rentalContracts', 'rentalLogs', 'rentalBilling', 'rentalPayments', 'rentalReport'], mt: ['mtOverview', 'mtRequest', 'mtPurchase', 'mtApprove', 'mtReqEdit', 'mtSigRequester', 'mtSigSite', 'mtSigMech', 'mtSigApprover', 'mtForm', 'mtHistory', 'mtVehicles', 'mtReport'] };
 
   // ຕັ້ງສິດທັງກຸ່ມ (ໃນຟອມຈັດການຜູ້ໃຊ້) — ຖ້າໜ້າໃດບໍ່ມີລະດັບນັ້ນ ຈະໃຊ້ລະດັບທີ່ໃກ້ທີ່ສຸດ
   function setModulePerms(group, level) {
@@ -5011,9 +5093,9 @@ function executeStockSubmit(formObj) {
 
   function applyRolePreset(roleVal) {
     if (roleVal === 'Edit') {
-      setPermissionCheckboxes({ recordOut: true, recordIn: true, dashboard: true, tableOut: 'edit', tableIn: 'edit', manageUsers: false, stockSummary: true, dailyReport: true, monthlyReport: true, yearlyReport: true, vehicleUsage: true, rentalContracts: 'edit', rentalLogs: 'edit', rentalBilling: 'edit', rentalPayments: 'edit', rentalReport: 'view', mtOverview: 'view', mtRequest: 'edit', mtApprove: 'none', mtReqEdit: 'none', mtSigRequester: 'none', mtSigSite: 'none', mtSigMech: 'none', mtSigApprover: 'none', mtForm: 'edit', mtHistory: 'edit', mtVehicles: 'edit', mtReport: 'view' });
+      setPermissionCheckboxes({ recordOut: true, recordIn: true, dashboard: true, tableOut: 'edit', tableIn: 'edit', manageUsers: false, stockSummary: true, dailyReport: true, monthlyReport: true, yearlyReport: true, vehicleUsage: true, rentalContracts: 'edit', rentalLogs: 'edit', rentalBilling: 'edit', rentalPayments: 'edit', rentalReport: 'view', mtOverview: 'view', mtRequest: 'edit', mtPurchase: 'edit', mtApprove: 'none', mtReqEdit: 'none', mtSigRequester: 'none', mtSigSite: 'none', mtSigMech: 'none', mtSigApprover: 'none', mtForm: 'edit', mtHistory: 'edit', mtVehicles: 'edit', mtReport: 'view' });
     } else if (roleVal === 'View') {
-      setPermissionCheckboxes({ recordOut: false, recordIn: false, dashboard: true, tableOut: 'view', tableIn: 'view', manageUsers: false, stockSummary: true, dailyReport: true, monthlyReport: true, yearlyReport: true, rentalContracts: 'view', rentalLogs: 'view', rentalBilling: 'view', rentalPayments: 'view', rentalReport: 'view', mtOverview: 'view', mtRequest: 'view', mtApprove: 'none', mtReqEdit: 'none', mtSigRequester: 'none', mtSigSite: 'none', mtSigMech: 'none', mtSigApprover: 'none', mtForm: 'none', mtHistory: 'view', mtVehicles: 'view', mtReport: 'view' });
+      setPermissionCheckboxes({ recordOut: false, recordIn: false, dashboard: true, tableOut: 'view', tableIn: 'view', manageUsers: false, stockSummary: true, dailyReport: true, monthlyReport: true, yearlyReport: true, rentalContracts: 'view', rentalLogs: 'view', rentalBilling: 'view', rentalPayments: 'view', rentalReport: 'view', mtOverview: 'view', mtRequest: 'view', mtPurchase: 'view', mtApprove: 'none', mtReqEdit: 'none', mtSigRequester: 'none', mtSigSite: 'none', mtSigMech: 'none', mtSigApprover: 'none', mtForm: 'none', mtHistory: 'view', mtVehicles: 'view', mtReport: 'view' });
     }
   }
 
@@ -6296,7 +6378,7 @@ var MT = (function () {
   var VST = { active: ['ໃຊ້ງານ', 'p-ok'], repair: ['ກຳລັງສ້ອມ', 'p-warn'], inactive: ['ເຊົາໃຊ້ງານ', 'p-mute'] };
   var DUE = { bad: ['ຕ້ອງປ່ຽນດ່ວນ', 'p-bad'], warn: ['ໃກ້ຮອດກຳນົດ', 'p-warn'], ok: ['ປົກກະຕິ', 'p-ok'] };
   var SHOP = { internal: 'ອູ່ພາຍໃນ', external: 'ອູ່ພາຍນອກ', field: 'ສ້ອມໜ້າງານ' };
-  var TITLES = { overview: '🔧 ພາບລວມການສ້ອມແປງ ແລະ ກຳນົດປ່ຽນອະໄຫຼ່', request: '📝 ໃບສະເໜີສ້ອມແປງ ແລະ ການອະນຸມັດ', form: '📝 ບັນທຶກການສ້ອມແປງລົດ', history: '📚 ປະຫວັດການສ້ອມແປງລົດແຕ່ລະຄັນ', vehicles: '🚗 ທະບຽນລົດ-ກົນຈັກ', report: '📊 ລາຍງານຄ່າສ້ອມແປງ' };
+  var TITLES = { overview: '🔧 ພາບລວມການສ້ອມແປງ ແລະ ກຳນົດປ່ຽນອະໄຫຼ່', request: '📝 ໃບສະເໜີສ້ອມແປງ ແລະ ການອະນຸມັດ', purchase: '🛒 ໃບສະເໜີຊື້ອະໄຫຼ່ ແລະ ການອະນຸມັດ', form: '📝 ບັນທຶກການສ້ອມແປງລົດ', history: '📚 ປະຫວັດການສ້ອມແປງລົດແຕ່ລະຄັນ', vehicles: '🚗 ທະບຽນລົດ-ກົນຈັກ', report: '📊 ລາຍງານຄ່າສ້ອມແປງ' };
   var COMMON_PARTS = ['ນ້ຳມັນເຄື່ອງ', 'ໄສ້ກອງນ້ຳມັນເຄື່ອງ', 'ໄສ້ກອງອາກາດ', 'ໄສ້ກອງນ້ຳມັນເຊື້ອໄຟ', 'ໄສ້ກອງດັກນ້ຳ', 'ນ້ຳມັນເກຍ', 'ນ້ຳມັນເຟືອງທ້າຍ', 'ນ້ຳມັນເບກ', 'ນ້ຳມັນໄຮໂດຼລິກ', 'ໄສ້ກອງໄຮໂດຼລິກ', 'ນ້ຳຢາຫຼໍ່ເຢັນ', 'ຜ້າເບກໜ້າ', 'ຜ້າເບກຫຼັງ', 'ຜ້າຄັດ', 'ໝໍ້ໄຟ (ແບັດເຕີຣີ)', 'ຢາງລົດ', 'ສາຍພານ', 'ລູກປືນລໍ້', 'ຫົວທຽນ', 'ຈາລະບີ', 'ໂຊ້ກອັບ', 'ໄສ້ກອງແອ', 'ຂຽວບຸ້ງກີ', 'ປາຍບຸ້ງກີ'];
 
   function $(id) { return document.getElementById(id); }
@@ -6357,6 +6439,7 @@ var MT = (function () {
     var P = (S.d && S.d.perm) || {};
     if (sec === 'form') return (P.form === 'edit' || P.history === 'edit') ? 'edit' : 'none';
     if (sec === 'request') return (P.request === 'edit' || P.approve === 'edit' || P.reqEdit === 'edit') ? 'edit' : (P.request === 'view' ? 'view' : 'none');
+    if (sec === 'purchase') return (P.purchase === 'edit' || P.approve === 'edit') ? 'edit' : (P.purchase === 'view' ? 'view' : 'none');
     return P[sec] || 'none';
   }
   function applyPerm() {
@@ -6366,6 +6449,7 @@ var MT = (function () {
     $('mt-content').classList.toggle('mt-no-vehicles', P.vehicles !== 'edit');
     $('mt-content').classList.toggle('mt-no-request', P.request !== 'edit');
     $('mt-content').classList.toggle('mt-no-approve', P.approve !== 'edit');
+    $('mt-content').classList.toggle('mt-no-purchase', P.purchase !== 'edit');
     $('mtDenied').style.display = denied ? 'block' : 'none';
     document.querySelectorAll('#mt-content section[data-sec]').forEach(function (s) { s.classList.toggle('on', !denied && s.dataset.sec === S.sec); });
     $('mtSub').textContent = 'ຂໍ້ມູນ ' + ld(today()) + ' · ' + S.d.userName + ' · ' + (L === 'edit' ? 'ສິດແກ້ໄຂ' : L === 'view' ? 'ສິດເບິ່ງຢ່າງດຽວ' : 'ບໍ່ມີສິດ');
@@ -6387,7 +6471,7 @@ var MT = (function () {
     var d = S.d, t = today(), m = t.slice(0, 7);
     applyPerm();
     var sites = d.stations.map(function (s) { return [s, s]; });
-    ['mtDueSite', 'mtHSite', 'mtVQSite', 'mtRSite', 'mtQSite'].forEach(function (id) { setSel(id, opts(sites, 'ທຸກສະໜາມ')); });
+    ['mtDueSite', 'mtHSite', 'mtVQSite', 'mtRSite', 'mtQSite', 'mtPSite'].forEach(function (id) { setSel(id, opts(sites, 'ທຸກສະໜາມ')); });
     setSel('mtVStation', opts(sites, '— ເລືອກສະໜາມ —') + ((d.groupStations || []).length ? '<optgroup label="📥 ດຶງຈາກຕາຕະລາງສະໜາມ ລາວໃຕ້">' + opts(d.groupStations.map(function (s) { return [s, s]; })) + '</optgroup>' : ''));
     var active = d.vehicles.filter(function (v) { return v.status !== 'inactive'; }).sort(function (a, b) { return a.plate.localeCompare(b.plate); });
     var keepPlate = $('mtFPlate').value;
@@ -6398,6 +6482,12 @@ var MT = (function () {
     var keepQ = $('mtQPlate').value;
     $('mtQPlate').innerHTML = plateOpts(active, anyVeh ? '— ເລືອກລົດ-ກົນຈັກ —' : '— ຍັງບໍ່ມີລົດໃນຖານຂໍ້ມູນ —');
     $('mtQPlate').value = keepQ;
+    var keepP = $('mtPPlate').value;
+    $('mtPPlate').innerHTML = plateOpts(active, '— ບໍ່ລະບຸລົດ (ຊື້ເຂົ້າສາງ / ໃຊ້ທົ່ວໄປ) —');
+    $('mtPPlate').value = keepP;
+    setSel('mtPStation', opts(sites, '— ເລືອກສະໜາມ —'));
+    $('mtPReqList').innerHTML = (d.requests || []).filter(function (q) { return ['pending', 'approved', 'inprogress'].indexOf(q.status) >= 0; })
+      .map(function (q) { return '<option value="' + esc(q.reqNo) + '">' + esc(q.plate + ' · ' + q.symptom) + '</option>'; }).join('');
     setSel('mtHVeh', opts(d.vehicles.slice().sort(function (a, b) { return a.plate.localeCompare(b.plate); }).map(function (v) { return [v.plate, vLabel(v)]; }), 'ທຸກຄັນ'));
     var names = {}; COMMON_PARTS.forEach(function (n) { names[n] = 1; }); d.parts.forEach(function (p) { if (p.name) names[p.name] = 1; });
     $('mtPartNames').innerHTML = Object.keys(names).sort().map(function (n) { return '<option value="' + esc(n) + '">'; }).join('');
@@ -6409,6 +6499,7 @@ var MT = (function () {
     if (!$('mtRFrom').value) { $('mtRFrom').value = m.slice(0, 4) + '-01'; $('mtRTo').value = m; }
     if (!$('mtForm').querySelector('[name=id]').value && !$('mtForm').querySelector('[name=date]').value) newRecord(true);
     if (!$('mtQForm').querySelector('[name=id]').value && !$('mtQForm').querySelector('[name=date]').value) newRequest(true);
+    if (!$('mtPForm').querySelector('[name=id]').value && !$('mtPForm').querySelector('[name=date]').value) newPurchase(true);
 
     // ບັດສະຫຼຸບ
     var repairing = d.vehicles.filter(function (v) { return v.status === 'repair'; }).length;
@@ -6421,7 +6512,7 @@ var MT = (function () {
     $('mtCCost').textContent = fmt(monthRecs.reduce(function (s, r) { return s + Number(r.totalLAK || 0); }, 0));
     $('mtCCostS').textContent = monthRecs.length + ' ໃບສ້ອມ';
 
-    renderDue(); renderOpen(); renderDocs(); renderHistory(); renderVehicles(); renderImport(); renderRequests();
+    renderDue(); renderOpen(); renderDocs(); renderHistory(); renderVehicles(); renderImport(); renderRequests(); renderPurchases();
     if (S.sec === 'report') renderReport();
   }
 
@@ -7099,6 +7190,244 @@ var MT = (function () {
       '<p style="font-size:12px">ພິມວັນທີ ' + ld(today()) + ' · ໂດຍ ' + esc(S.d.userName) + '</p>' + sigHtml(q));
   }
 
+  /* ---------- 🛒 ໃບສະເໜີຊື້ອະໄຫຼ່ ---------- */
+  var PRS = { pending: ['ລໍຖ້າອະນຸມັດ', 'p-warn'], approved: ['ອະນຸມັດແລ້ວ', 'p-info'], rejected: ['ບໍ່ອະນຸມັດ', 'p-bad'], ordered: ['ສັ່ງຊື້ແລ້ວ', 'p-warn'], received: ['ຮັບເຄື່ອງແລ້ວ', 'p-ok'], cancelled: ['ຍົກເລີກ', 'p-mute'] };
+  var PF = { st: 'open' }; // open = ລໍຖ້າ + ອະນຸມັດ + ສັ່ງຊື້ແລ້ວ
+  function purs() { return (S.d && S.d.purchases) || []; }
+  function pr(id) { return purs().find(function (x) { return x.id === id; }); }
+  function pItemsOf(x) { try { var a = JSON.parse(x.items || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
+  function canBuy() { var P = (S.d && S.d.perm) || {}; return P.approve === 'edit' || P.form === 'edit'; }
+
+  function newPurchase(silent) {
+    var f = $('mtPForm'); f.reset();
+    f.querySelector('[name=id]').value = ''; $('mtPPhotosKeep').value = ''; $('mtPFiles').value = '';
+    f.querySelector('[name=date]').value = today();
+    f.querySelector('[name=requestedBy]').value = S.d ? S.d.userName : '';
+    if (S.d && S.d.stations.length === 1) $('mtPStation').value = S.d.stations[0];
+    $('mtPItems').innerHTML = ''; pAddItem();
+    $('mtPTitle').innerHTML = '<i class="bi bi-cart-plus"></i> ໃບສະເໜີຊື້ອະໄຫຼ່ / ຂໍອະນຸມັດຊື້';
+    $('mtPSaveBtn').textContent = '📨 ສົ່ງໃບສະເໜີຊື້';
+    renderPPhotos(); pCalc();
+    if (silent !== true) { switchTab('mt-purchase'); f.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  }
+  function pAddItem(it) {
+    it = it || {};
+    var d = document.createElement('div'); d.className = 'mt-prrow';
+    d.innerHTML = '<label class="pn">ຊື່ອະໄຫຼ່ *<input class="form-control form-control-sm" data-f="name" list="mtPartNames" value="' + esc(it.name) + '" placeholder="ຕົວຢ່າງ: ໄສ້ກອງນ້ຳມັນເຄື່ອງ"></label>' +
+      '<label>ເລກອະໄຫຼ່ / ຍີ່ຫໍ້<input class="form-control form-control-sm" data-f="partNo" value="' + esc(it.partNo) + '"></label>' +
+      '<label>ຈຳນວນ<input class="form-control form-control-sm" type="number" data-f="qty" min="0" step="any" value="' + (it.qty === undefined ? 1 : esc(it.qty)) + '"></label>' +
+      '<label>ໜ່ວຍ<input class="form-control form-control-sm" data-f="uom" value="' + esc(it.uom === undefined ? 'ອັນ' : it.uom) + '"></label>' +
+      '<label>ລາຄາ/ໜ່ວຍ<input class="form-control form-control-sm" type="number" data-f="price" min="0" step="any" value="' + esc(it.price === undefined ? 0 : it.price) + '"></label>' +
+      '<label>ສະກຸນ<select class="form-select form-select-sm" data-f="cur">' + CUR_OPTS + '</select></label>' +
+      '<div class="amt" data-amt>0</div>' +
+      '<button type="button" class="btn btn-sm btn-outline-danger" title="ລຶບແຖວ" aria-label="ລຶບແຖວ"><i class="bi bi-x-lg"></i></button>';
+    d.querySelector('select').value = it.cur || 'LAK';
+    d.querySelector('button').onclick = function () { d.remove(); pCalc(); };
+    d.addEventListener('input', pCalc); d.addEventListener('change', pCalc);
+    $('mtPItems').appendChild(d); pCalc();
+  }
+  function pItems() {
+    return Array.prototype.map.call(document.querySelectorAll('#mtPItems .mt-prrow'), function (row) {
+      var o = {}; row.querySelectorAll('[data-f]').forEach(function (i) { o[i.dataset.f] = i.value.trim(); }); return o;
+    }).filter(function (p) { return p.name; });
+  }
+  function pCalc() {
+    var rt = (S.d && S.d.rates) || {}, by = {};
+    document.querySelectorAll('#mtPItems .mt-prrow').forEach(function (row) {
+      var q = Number(row.querySelector('[data-f=qty]').value) || 0, p = Number(row.querySelector('[data-f=price]').value) || 0, c = row.querySelector('[data-f=cur]').value || 'LAK';
+      row.querySelector('[data-amt]').textContent = fmt(toLAK(q * p, c, rt));
+      if (row.querySelector('[data-f=name]').value.trim()) by[c] = (by[c] || 0) + q * p;
+    });
+    var tot = Object.keys(by).reduce(function (s, c) { return s + toLAK(by[c], c, rt); }, 0);
+    $('mtPTotal').textContent = fmt(tot) + ' ກີບ';
+    $('mtPBreak').textContent = Object.keys(by).filter(function (c) { return c !== 'LAK' && by[c] > 0; }).map(function (c) { return fmt2(by[c]) + ' ' + CUR[c] + ' × ' + fmt(rt[c]) + ' ກີບ'; }).join(' · ');
+    return tot;
+  }
+  function pVehicle() {
+    var plate = $('mtPPlate').value; if (!plate) return;
+    var v = veh(plate); if (v.station) $('mtPStation').value = v.station;
+  }
+  function pPhotoList() { return String($('mtPPhotosKeep').value || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean); }
+  function renderPPhotos() { $('mtPPhotoList').innerHTML = pPhotoList().map(function (u, i) { return thumb(u, i, 'MT.pRemovePhoto'); }).join(''); }
+  function pRemovePhoto(i) { var l = pPhotoList(); l.splice(i, 1); $('mtPPhotosKeep').value = l.join(', '); renderPPhotos(); }
+
+  function savePurchase(ev) {
+    ev.preventDefault();
+    var f = $('mtPForm'), o = {};
+    f.querySelectorAll('[name]').forEach(function (i) { o[i.name] = i.value.trim(); });
+    var its = pItems();
+    if (!its.length) { Swal.fire({ icon: 'warning', title: 'ກະລຸນາໃສ່ລາຍການອະໄຫຼ່ຢ່າງໜ້ອຍ 1 ລາຍການ' }); return false; }
+    if (its.some(function (p) { return !(Number(p.qty) > 0); })) { Swal.fire({ icon: 'warning', title: 'ຈຳນວນຕ້ອງຫຼາຍກວ່າ 0' }); return false; }
+    o.items = JSON.stringify(its.map(function (p) { return { name: p.name, partNo: p.partNo, qty: Number(p.qty) || 0, uom: p.uom, price: Number(p.price) || 0, cur: p.cur }; }));
+    var notify = { line: !!($('notifyLine') && $('notifyLine').checked) };
+    loading(o.id ? 'ກຳລັງບັນທຶກການແກ້ໄຂ…' : 'ກຳລັງສົ່ງໃບສະເໜີຊື້…');
+    Promise.all(Array.prototype.map.call($('mtPFiles').files, readFile)).then(function (files) {
+      return call('mtSavePurchase', o, files, notify);
+    }).then(function (r) {
+      setData(r); newPurchase(true);
+      ok((o.id ? 'ແກ້ໄຂແລ້ວ ' : 'ສົ່ງໃບສະເໜີຊື້ແລ້ວ ') + (r.prNo || ''), o.id ? '' : 'ໃບສະເໜີຢູ່ໃນສະຖານະ <b>ລໍຖ້າອະນຸມັດ</b>');
+    }).catch(fail);
+    return false;
+  }
+  function editPurchase(id) {
+    var x = pr(id); if (!x) return;
+    newPurchase(); var f = $('mtPForm');
+    f.querySelectorAll('[name]').forEach(function (i) { if (x[i.name] !== undefined && x[i.name] !== null) i.value = x[i.name]; });
+    if (x.plate && $('mtPPlate').value !== x.plate) { $('mtPPlate').insertAdjacentHTML('beforeend', '<option value="' + esc(x.plate) + '">' + esc(vLabel(veh(x.plate))) + '</option>'); $('mtPPlate').value = x.plate; }
+    if (x.station && $('mtPStation').value !== x.station) { $('mtPStation').insertAdjacentHTML('beforeend', '<option value="' + esc(x.station) + '">' + esc(x.station) + '</option>'); $('mtPStation').value = x.station; }
+    $('mtPItems').innerHTML = '';
+    var its = pItemsOf(x); (its.length ? its : [{}]).forEach(pAddItem);
+    renderPPhotos(); pCalc();
+    $('mtPTitle').innerHTML = '<i class="bi bi-pencil-square"></i> ແກ້ໄຂໃບສະເໜີຊື້ ' + esc(x.prNo);
+    $('mtPSaveBtn').textContent = '💾 ບັນທຶກການແກ້ໄຂ';
+  }
+  function pItemsHtml(its) {
+    return its.map(function (it) { return '• ' + esc(it.name) + ' × ' + fmt2(it.qty) + (it.uom ? ' ' + esc(it.uom) : ''); }).join('<br>');
+  }
+  function decidePurchase(id, decision) {
+    var x = pr(id); if (!x) return;
+    var ap = decision === 'approved';
+    Swal.fire({
+      title: (ap ? '✅ ອະນຸມັດ ' : '❌ ບໍ່ອະນຸມັດ ') + esc(x.prNo),
+      footer: '👤 ' + (ap ? 'ອະນຸມັດ' : 'ບໍ່ອະນຸມັດ') + 'ໃນນາມ: <b>' + esc(S.d.userName) + '</b>',
+      html: '<div style="text-align:left;font-size:13.5px"><b>' + esc(x.station) + '</b>' + (x.plate ? ' · ' + esc(x.plate) : '') + ' · ຄວາມດ່ວນ: ' + esc((URG[x.urgency] || URG.normal)[0]) +
+        (x.purpose ? '<div class="mt-1">ເຫດຜົນ: ' + esc(x.purpose) + '</div>' : '') +
+        '<div class="mt-1" style="color:#64748b">' + pItemsHtml(pItemsOf(x)) + '</div>' +
+        '<div class="mt-1">ຄາດຄະເນ: <b>' + fmt(x.estTotalLAK) + ' ກີບ</b></div></div>' +
+        (ap ? '<label style="display:block;text-align:left;font-size:12px;font-weight:600;margin-top:10px">ວົງເງິນອະນຸມັດ (ກີບ)<input id="swAmt" type="number" min="0" step="any" class="form-control" value="' + esc(x.estTotalLAK || 0) + '"></label>' : '') +
+        '<label style="display:block;text-align:left;font-size:12px;font-weight:600;margin-top:10px">' + (ap ? 'ຄຳເຫັນ / ເງື່ອນໄຂ (ບໍ່ບັງຄັບ)' : 'ເຫດຜົນທີ່ບໍ່ອະນຸມັດ *') + '<textarea id="swNote" rows="2" class="form-control"></textarea></label>',
+      showCancelButton: true, confirmButtonText: ap ? 'ອະນຸມັດ' : 'ບໍ່ອະນຸມັດ', cancelButtonText: 'ປິດ', confirmButtonColor: ap ? '#16a34a' : '#e74c3c',
+      preConfirm: function () {
+        var note = document.getElementById('swNote').value.trim();
+        if (!ap && !note) { Swal.showValidationMessage('ກະລຸນາໃສ່ເຫດຜົນ'); return false; }
+        var amt = ap ? document.getElementById('swAmt').value : '';
+        if (ap && (amt === '' || Number(amt) < 0)) { Swal.showValidationMessage('ວົງເງິນບໍ່ຖືກຕ້ອງ'); return false; }
+        return { note: note, approvedLAK: amt };
+      }
+    }).then(function (r) {
+      if (!r.isConfirmed) return;
+      loading('ກຳລັງບັນທຶກ…');
+      call('mtDecidePurchase', id, decision, r.value, { line: !!($('notifyLine') && $('notifyLine').checked) })
+        .then(function (res) { setData(res); ok(ap ? 'ອະນຸມັດແລ້ວ' : 'ບັນທຶກ "ບໍ່ອະນຸມັດ" ແລ້ວ'); }).catch(fail);
+    });
+  }
+  function setPurchase(id, status) {
+    var x = pr(id); if (!x) return;
+    var L = function (t, inner) { return '<label style="display:block;text-align:left;font-size:12px;font-weight:600;margin-top:10px">' + t + inner + '</label>'; };
+    var cfg;
+    if (status === 'cancelled') cfg = { icon: 'warning', title: 'ຍົກເລີກໃບສະເໜີຊື້ ' + esc(x.prNo) + '?', confirmButtonText: 'ຍົກເລີກໃບສະເໜີ', confirmButtonColor: '#e74c3c', pre: function () { return {}; } };
+    else if (status === 'ordered') cfg = { title: '🛒 ສັ່ງຊື້ແລ້ວ · ' + esc(x.prNo), confirmButtonText: 'ບັນທຶກການສັ່ງຊື້', confirmButtonColor: '#7c3aed',
+      html: L('ເລກໃບສັ່ງຊື້ / ໃບບິນ', '<input id="swPo" class="form-control" value="' + esc(x.poNo) + '">') + L('ຮ້ານ / ຜູ້ສະໜອງ', '<input id="swSup" class="form-control" value="' + esc(x.supplier) + '">'),
+      pre: function () { return { poNo: $('swPo').value.trim(), supplier: $('swSup').value.trim() }; } };
+    else cfg = { title: '📦 ຮັບເຄື່ອງແລ້ວ · ' + esc(x.prNo), confirmButtonText: 'ບັນທຶກການຮັບເຄື່ອງ', confirmButtonColor: '#16a34a',
+      html: '<div style="text-align:left;font-size:13px;color:#64748b">' + pItemsHtml(pItemsOf(x)) + '</div>' +
+        L('ລາຄາຈິງທັງໝົດ (ກີບ)', '<input id="swAct" type="number" min="0" step="any" class="form-control" value="' + esc(x.approvedLAK || x.estTotalLAK || 0) + '">') +
+        L('ເລກໃບບິນ', '<input id="swPo" class="form-control" value="' + esc(x.poNo) + '">') + L('ໝາຍເຫດ (ບໍ່ບັງຄັບ)', '<input id="swNote" class="form-control">'),
+      pre: function () { var a = $('swAct').value; if (a !== '' && Number(a) < 0) { Swal.showValidationMessage('ລາຄາບໍ່ຖືກຕ້ອງ'); return false; } return { actualLAK: a, poNo: $('swPo').value.trim(), note: $('swNote').value.trim() }; } };
+    Swal.fire({ icon: cfg.icon, title: cfg.title, html: cfg.html, showCancelButton: true, confirmButtonText: cfg.confirmButtonText, cancelButtonText: 'ປິດ', confirmButtonColor: cfg.confirmButtonColor, focusConfirm: false, preConfirm: cfg.pre })
+      .then(function (r) {
+        if (!r.isConfirmed) return;
+        loading('ກຳລັງບັນທຶກ…');
+        call('mtUpdatePurchase', id, status, r.value).then(function (res) { setData(res); ok(PRS[status][0]); }).catch(fail);
+      });
+  }
+  function pFilter(st) { PF.st = st; renderPurchases(); }
+  function filteredPurchases() {
+    var site = $('mtPSite').value, fr = $('mtPFrom').value, to = $('mtPTo').value, q = $('mtPQ').value.trim().toLowerCase();
+    return purs().filter(function (x) {
+      if (site && x.station !== site) return false;
+      if (fr && x.date < fr) return false;
+      if (to && x.date > to) return false;
+      if (q && [x.prNo, x.plate, x.station, x.purpose, x.requestedBy, x.supplier, x.requestNo, x.poNo, pItemsOf(x).map(function (i) { return i.name + ' ' + i.partNo; }).join(' ')].join(' ').toLowerCase().indexOf(q) < 0) return false;
+      return true;
+    });
+  }
+  function renderPurchases() {
+    if (!S.d) return;
+    var base = filteredPurchases(), cnt = {};
+    base.forEach(function (x) { cnt[x.status] = (cnt[x.status] || 0) + 1; });
+    var openN = (cnt.pending || 0) + (cnt.approved || 0) + (cnt.ordered || 0);
+    var chips = [['open', 'ຍັງບໍ່ປິດ', openN], ['pending', 'ລໍຖ້າອະນຸມັດ', cnt.pending || 0], ['approved', 'ອະນຸມັດແລ້ວ', cnt.approved || 0], ['ordered', 'ສັ່ງຊື້ແລ້ວ', cnt.ordered || 0],
+      ['received', 'ຮັບເຄື່ອງແລ້ວ', cnt.received || 0], ['rejected', 'ບໍ່ອະນຸມັດ', cnt.rejected || 0], ['cancelled', 'ຍົກເລີກ', cnt.cancelled || 0], ['', 'ທັງໝົດ', base.length]];
+    $('mtPChips').innerHTML = chips.map(function (c) { return '<button type="button" class="' + (PF.st === c[0] ? 'on' : '') + '" onclick="MT.pFilter(\'' + c[0] + '\')">' + c[1] + '<b>' + c[2] + '</b></button>'; }).join('');
+    var rank = { critical: 0, urgent: 1, normal: 2 };
+    var list = base.filter(function (x) { return !PF.st || (PF.st === 'open' ? ['pending', 'approved', 'ordered'].indexOf(x.status) >= 0 : x.status === PF.st); })
+      .sort(function (a, b) {
+        var pa = a.status === 'pending' ? 0 : 1, pb = b.status === 'pending' ? 0 : 1;
+        if (pa !== pb) return pa - pb;
+        if (a.status === 'pending' && rank[a.urgency] !== rank[b.urgency]) return (rank[a.urgency] || 2) - (rank[b.urgency] || 2);
+        return a.date === b.date ? (a.prNo < b.prNo ? 1 : -1) : (a.date < b.date ? 1 : -1);
+      });
+    $('mtPCount').innerHTML = '<i class="bi bi-list-check"></i> ລາຍການໃບສະເໜີຊື້ (' + list.length + ')';
+    var P = S.d.perm || {}, ap = P.approve === 'edit', reqEditE = P.reqEdit === 'edit', buyE = canBuy(), sendE = P.purchase === 'edit';
+    $('mtPBody').innerHTML = list.length ? list.map(function (x) {
+      var its = pItemsOf(x), btn = [], mine = String(x.createdByEmail || '').toLowerCase() === String(S.d.userEmail || '').toLowerCase();
+      btn.push('<button class="btn btn-sm btn-outline-secondary py-0 px-2" title="ພິມໃບສະເໜີຊື້" aria-label="ພິມໃບສະເໜີຊື້" onclick="MT.printPurchase(\'' + esc(x.id) + '\')"><i class="bi bi-printer"></i></button>');
+      if (x.status === 'pending') {
+        if (ap) btn.push('<button class="btn btn-sm btn-success py-0 px-2" onclick="MT.decidePurchase(\'' + esc(x.id) + '\',\'approved\')"><i class="bi bi-check-lg"></i> ອະນຸມັດ</button>',
+          '<button class="btn btn-sm btn-outline-danger py-0 px-2" onclick="MT.decidePurchase(\'' + esc(x.id) + '\',\'rejected\')"><i class="bi bi-x-lg"></i> ບໍ່ອະນຸມັດ</button>');
+        if ((mine && sendE) || reqEditE) btn.push('<button class="btn btn-sm btn-outline-primary py-0 px-2" title="ແກ້ໄຂ" aria-label="ແກ້ໄຂ" onclick="MT.editPurchase(\'' + esc(x.id) + '\')"><i class="bi bi-pencil"></i></button>',
+          '<button class="btn btn-sm btn-outline-secondary py-0 px-2" title="ຍົກເລີກໃບສະເໜີ" aria-label="ຍົກເລີກໃບສະເໜີ" onclick="MT.setPurchase(\'' + esc(x.id) + '\',\'cancelled\')"><i class="bi bi-slash-circle"></i></button>');
+      }
+      if (x.status === 'approved' && buyE) btn.push('<button class="btn btn-sm btn-warning fw-bold py-0 px-2" onclick="MT.setPurchase(\'' + esc(x.id) + '\',\'ordered\')"><i class="bi bi-cart-check"></i> ສັ່ງຊື້ແລ້ວ</button>');
+      if ((x.status === 'approved' || x.status === 'ordered') && buyE) btn.push('<button class="btn btn-sm btn-outline-success fw-bold py-0 px-2" onclick="MT.setPurchase(\'' + esc(x.id) + '\',\'received\')"><i class="bi bi-box-seam"></i> ຮັບເຄື່ອງແລ້ວ</button>');
+      var photos = String(x.photos || '').split(',').filter(function (u) { return u.trim(); }).length;
+      var step = x.status === 'ordered' ? '<div class="mt-mini">🛒 ' + esc(x.orderedBy) + ' · ' + ld(String(x.orderedAt).slice(0, 10)) + (x.poNo ? ' · ' + esc(x.poNo) : '') + '</div>'
+        : x.status === 'received' ? '<div class="mt-mini" style="color:#15803d">📦 ' + esc(x.receivedBy) + ' · ' + ld(String(x.receivedAt).slice(0, 10)) + (x.poNo ? ' · ' + esc(x.poNo) : '') + '</div>' : '';
+      return '<tr class="mt-urg-' + esc(x.urgency) + '"><td><b>' + esc(x.prNo) + '</b><div class="mt-mini">' + ld(x.date) + (x.neededBy ? '<br>ຕ້ອງການ ' + ld(x.neededBy) : '') + '</div></td>' +
+        '<td>' + esc(x.station) + (x.plate ? '<div class="mt-mini"><span class="mt-link" onclick="MT.book(\'' + esc(x.plate) + '\')">' + esc(x.plate) + '</span></div>' : '') + (x.requestNo ? '<div class="mt-mini">📝 ' + esc(x.requestNo) + '</div>' : '') + '</td>' +
+        '<td style="min-width:180px">' + pItemsHtml(its.slice(0, 4)) + (its.length > 4 ? '<div class="mt-mini">… ອີກ ' + (its.length - 4) + ' ລາຍການ</div>' : '') + '<div class="mt-mini">' + (x.supplier ? '🏪 ' + esc(x.supplier) : '') + (photos ? ' · 📎 ' + photos : '') + '</div></td>' +
+        '<td>' + pill(URG[x.urgency] || URG.normal) + '</td>' +
+        '<td class="n">' + fmt(x.estTotalLAK) + (x.approvedLAK !== '' && x.approvedLAK != null ? '<div class="mt-mini">ອະນຸມັດ ' + fmt(x.approvedLAK) + '</div>' : '') + (x.actualLAK !== '' && x.actualLAK != null ? '<div class="mt-mini" style="color:#15803d">ຈິງ ' + fmt(x.actualLAK) + '</div>' : '') + '</td>' +
+        '<td>' + pill(PRS[x.status] || ['-', 'p-mute']) + decidedBy(x) + step + (x.decisionNote ? '<div class="mt-mini" style="max-width:200px">💬 ' + esc(x.decisionNote) + '</div>' : '') + '</td>' +
+        '<td>' + esc(x.requestedBy) + (x.phone ? '<div class="mt-mini">📞 ' + esc(x.phone) + '</div>' : '') + '</td>' +
+        '<td><div class="d-flex flex-wrap gap-1">' + btn.join('') + '</div></td></tr>';
+    }).join('') : '<tr><td colspan="8" class="mt-mini">' + (purs().length ? 'ບໍ່ມີໃບສະເໜີຕາມເງື່ອນໄຂ.' : 'ຍັງບໍ່ມີໃບສະເໜີຊື້ອະໄຫຼ່.') + '</td></tr>';
+
+    var all = purs(), m = today().slice(0, 7), sum = function (a, k) { return a.reduce(function (t, x) { return t + Number(x[k] || 0); }, 0); };
+    var pend = all.filter(function (x) { return x.status === 'pending'; }), appr = all.filter(function (x) { return x.status === 'approved'; }), ord = all.filter(function (x) { return x.status === 'ordered'; });
+    $('mtPCPend').textContent = pend.length; $('mtPCPendS').textContent = pend.length ? 'ຄາດຄະເນ ' + fmt(sum(pend, 'estTotalLAK')) + ' ກີບ' : 'ບໍ່ມີທີ່ຄ້າງ';
+    $('mtPCAppr').textContent = appr.length; $('mtPCApprS').textContent = appr.length ? fmt(sum(appr, 'approvedLAK')) + ' ກີບ' : '-';
+    $('mtPCOrd').textContent = ord.length; $('mtPCOrdS').textContent = ord.length ? fmt(sum(ord, 'approvedLAK')) + ' ກີບ' : '-';
+    var mApp = all.filter(function (x) { return String(x.decidedAt || '').slice(0, 7) === m && ['approved', 'ordered', 'received'].indexOf(x.status) >= 0; });
+    $('mtPCAmt').textContent = fmt(sum(mApp, 'approvedLAK')); $('mtPCAmtS').textContent = mApp.length + ' ໃບ';
+  }
+  function exportPurchases() {
+    var list = filteredPurchases();
+    var r1 = [['ເລກທີ', 'ວັນທີ', 'ຕ້ອງການພາຍໃນ', 'ສະໜາມ', 'ລົດ', 'ອ້າງອີງໃບສະເໜີສ້ອມ', 'ເຫດຜົນ', 'ຄວາມດ່ວນ', 'ຮ້ານ/ຜູ້ສະໜອງ', 'ຜູ້ສະເໜີ', 'ເບີໂທ', 'ຄາດຄະເນ(ກີບ)', 'ສະຖານະ', 'ຜູ້ອະນຸມັດ', 'ວັນທີພິຈາລະນາ', 'ວົງເງິນອະນຸມັດ(ກີບ)', 'ຄຳເຫັນ', 'ເລກໃບສັ່ງຊື້/ບິນ', 'ວັນທີສັ່ງຊື້', 'ວັນທີຮັບເຄື່ອງ', 'ລາຄາຈິງ(ກີບ)', 'ໝາຍເຫດ']];
+    var r2 = [['ເລກທີໃບສະເໜີຊື້', 'ສະໜາມ', 'ລົດ', 'ອະໄຫຼ່', 'ເລກອະໄຫຼ່/ຍີ່ຫໍ້', 'ຈຳນວນ', 'ໜ່ວຍ', 'ລາຄາ/ໜ່ວຍ', 'ສະກຸນ']];
+    list.forEach(function (x) {
+      r1.push([x.prNo, ld(x.date), ld(x.neededBy), x.station, x.plate, x.requestNo, x.purpose, (URG[x.urgency] || [''])[0], x.supplier, x.requestedBy, x.phone, x.estTotalLAK, (PRS[x.status] || [''])[0], x.approver, String(x.decidedAt || '').slice(0, 16), x.approvedLAK, x.decisionNote, x.poNo, String(x.orderedAt || '').slice(0, 16), String(x.receivedAt || '').slice(0, 16), x.actualLAK, x.note]);
+      pItemsOf(x).forEach(function (it) { r2.push([x.prNo, x.station, x.plate, it.name, it.partNo, it.qty, it.uom, it.price, CUR[it.cur] || 'ກີບ']); });
+    });
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(r1), 'ໃບສະເໜີຊື້');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(r2), 'ລາຍການອະໄຫຼ່');
+    XLSX.writeFile(wb, 'Parts_Purchase_Requests_' + today() + '.xlsx');
+  }
+  function printPurchase(id) {
+    var x = pr(id); if (!x) return;
+    var its = pItemsOf(x), rt = S.d.rates || {}, box = function (on) { return on ? '☑' : '☐'; };
+    printNow(head('ໃບສະເໜີຊື້ອະໄຫຼ່ ເລກທີ ' + esc(x.prNo)) +
+      '<table><tr><td>ວັນທີ: <b>' + ld(x.date) + '</b></td><td>ຕ້ອງການພາຍໃນ: ' + (x.neededBy ? ld(x.neededBy) : '-') + '</td><td>ສະໜາມ: <b>' + esc(x.station) + '</b></td></tr>' +
+      '<tr><td>ສຳລັບລົດ: ' + (x.plate ? esc(x.plate) + ' ' + esc(veh(x.plate).model) : '-') + '</td><td>ອ້າງອີງໃບສະເໜີສ້ອມ: ' + esc(x.requestNo || '-') + '</td><td>ຮ້ານ/ຜູ້ສະໜອງ: ' + esc(x.supplier || '-') + '</td></tr>' +
+      '<tr><td colspan="3">ຄວາມດ່ວນ: ' + box(x.urgency === 'normal') + ' ປົກກະຕິ &nbsp; ' + box(x.urgency === 'urgent') + ' ດ່ວນ &nbsp; ' + box(x.urgency === 'critical') + ' ດ່ວນທີ່ສຸດ</td></tr>' +
+      '<tr><td colspan="3" style="height:44px;vertical-align:top">ເຫດຜົນ / ຈຸດປະສົງ: ' + esc(x.purpose || '') + '</td></tr>' +
+      '<tr><td>ຜູ້ສະເໜີ: ' + esc(x.requestedBy || '-') + '</td><td colspan="2">ເບີໂທ: ' + esc(x.phone || '-') + '</td></tr></table>' +
+      '<table><tr><th>#</th><th>ລາຍການອະໄຫຼ່</th><th>ເລກອະໄຫຼ່ / ຍີ່ຫໍ້</th><th class="n">ຈຳນວນ</th><th>ໜ່ວຍ</th><th class="n">ລາຄາ/ໜ່ວຍ</th><th class="n">ເປັນກີບ</th></tr>' +
+      its.map(function (it, i) { return '<tr><td>' + (i + 1) + '</td><td>' + esc(it.name) + '</td><td>' + esc(it.partNo) + '</td><td class="n">' + fmt2(it.qty) + '</td><td>' + esc(it.uom) + '</td><td class="n">' + fmt2(it.price) + ' ' + (CUR[it.cur] || 'ກີບ') + '</td><td class="n">' + fmt(toLAK(it.qty * it.price, it.cur, rt)) + '</td></tr>'; }).join('') +
+      '<tr><th colspan="6">ລວມຄາດຄະເນ (ກີບ)</th><th class="n">' + fmt(x.estTotalLAK) + '</th></tr></table>' +
+      '<table><tr><td colspan="2"><b>ຜົນການພິຈາລະນາ:</b> ' + box(['approved', 'ordered', 'received'].indexOf(x.status) >= 0) + ' ອະນຸມັດ &nbsp; ' + box(x.status === 'rejected') + ' ບໍ່ອະນຸມັດ' +
+      (x.approver ? ' &nbsp; · ໂດຍ ' + esc(x.approver) + ' ' + ld(String(x.decidedAt).slice(0, 10)) : '') + '</td></tr>' +
+      '<tr><td>ວົງເງິນອະນຸມັດ: ' + (x.approvedLAK !== '' && x.approvedLAK != null ? '<b>' + fmt(x.approvedLAK) + ' ກີບ</b>' : '........................ ກີບ') + '</td><td>ສະຖານະ: ' + esc((PRS[x.status] || [''])[0]) + (x.poNo ? ' · ເລກໃບສັ່ງຊື້: ' + esc(x.poNo) : '') + '</td></tr>' +
+      '<tr><td colspan="2" style="height:36px;vertical-align:top">ຄຳເຫັນ: ' + esc(x.decisionNote || '') + '</td></tr></table>' +
+      '<p style="font-size:12px">ພິມວັນທີ ' + ld(today()) + ' · ໂດຍ ' + esc(S.d.userName) + '</p>' +
+      '<table style="margin-top:30px;border:0"><tr>' + ['ຜູ້ສະເໜີ', 'ຫົວໜ້າສະໜາມ', 'ພະແນກກົນຈັກ', 'ຜູ້ອະນຸມັດ'].map(function (t, i) {
+        var nm = i === 0 ? x.requestedBy : i === 3 ? x.approver : '';
+        return '<td style="border:0;text-align:center;width:25%;padding-top:50px">........................<br>' + t + (nm ? '<br>' + esc(nm) : '') + '</td>';
+      }).join('') + '</tr></table>');
+  }
+
   /* ---------- ➕ ເພີ່ມລົດດ່ວນ ຈາກຟອມ ---------- */
   function quickVehicle(selId) {
     var sites = (S.d && S.d.stations) || [];
@@ -7265,7 +7594,9 @@ var MT = (function () {
     delVehicle: delVehicle, renderVehicles: renderVehicles, impAll: impAll, importVehicles: importVehicles, renderReport: renderReport,
     exportExcel: exportExcel, printRecord: printRecord, printBook: printBook, printReport: printReport,
     newRequest: newRequest, qAddItem: qAddItem, qCalc: qCalc, qVehicle: qVehicle, qRemovePhoto: qRemovePhoto, saveRequest: saveRequest, editRequest: editRequest,
-    cancelRequest: cancelRequest, decide: decide, toRecord: toRecord, qFilter: qFilter, renderRequests: renderRequests, exportRequests: exportRequests, printRequest: printRequest, quickVehicle: quickVehicle, signRequest: signRequest, signSlot: signSlot };
+    cancelRequest: cancelRequest, decide: decide, toRecord: toRecord, qFilter: qFilter, renderRequests: renderRequests, exportRequests: exportRequests, printRequest: printRequest, quickVehicle: quickVehicle, signRequest: signRequest, signSlot: signSlot,
+    newPurchase: newPurchase, pAddItem: pAddItem, pVehicle: pVehicle, pRemovePhoto: pRemovePhoto, savePurchase: savePurchase, editPurchase: editPurchase,
+    decidePurchase: decidePurchase, setPurchase: setPurchase, pFilter: pFilter, renderPurchases: renderPurchases, exportPurchases: exportPurchases, printPurchase: printPurchase };
 })();
 </script>
 <!-- ================= 📱💻 RESPONSIVE SCRIPT (ເມນູເລື່ອນ, ຫົວຂໍ້ໜ້າ, ຕາຕະລາງເປັນບັດ) ================= -->

@@ -18,7 +18,14 @@ const ALERT_EMAILS = [
 // G: Permissions (JSON string ຂອງ {recordOut,recordIn,dashboard,tableOut,tableIn,manageUsers}) | H: Station (ສະຖານທີ່ຮັບຜິດຊອບ, ຫວ່າງ = ທັງໝົດ)
 
 // 🌐 WEB APP ENTRY POINT
-function doGet() {
+// 🏷️ ສະບັບຂອງເຊີບເວີ — ກວດໄດ້ທີ່ <Web App URL>?version=1 (ປ່ຽນທຸກຄັ້ງທີ່ມີຟັງຊັນໃໝ່)
+const SF_SERVER_VERSION = '2026-11-09 · ໃບສະເໜີຊື້ອະໄຫຼ່';
+
+function doGet(e) {
+  if (e && e.parameter && e.parameter.version) {
+    return ContentService.createTextOutput(JSON.stringify({ ok: true, version: SF_SERVER_VERSION, purchase: true }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
   return HtmlService.createHtmlOutputFromFile('Index')
       .setTitle('ລະບົບບັນທຶກນ້ຳມັນ SMART v5')
       .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)

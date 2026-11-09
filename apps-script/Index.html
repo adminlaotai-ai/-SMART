@@ -7349,7 +7349,8 @@ var MT = (function () {
     var nb = $('mtPNotice');
     if (S.d.purchases === undefined) {
       nb.style.display = 'block';
-      nb.innerHTML = '⚠️ <b>ເຊີບເວີຍັງເປັນສະບັບເກົ່າ</b> — ກະລຸນາອັບເດດ <b>Code.gs</b> ໃນ Google Apps Script ແລ້ວ Deploy ເປັນ Version ໃໝ່ (Deploy → Manage deployments → Edit → Version: New). ຫຼັງຈາກນັ້ນ ກົດ "ໂຫຼດໃໝ່".';
+      nb.innerHTML = '⚠️ <b>ເຊີບເວີຍັງເປັນສະບັບເກົ່າ</b> — ກະລຸນາອັບເດດ <b>Code.gs</b> ໃນ Google Apps Script ແລ້ວ Deploy ເປັນ Version ໃໝ່ (Deploy → Manage deployments → Edit → Version: New). ຫຼັງຈາກນັ້ນ ກົດ "ໂຫຼດໃໝ່".' +
+        ((window.SMART_CONFIG || {}).GAS_WEB_APP_URL ? '<div class="mt-1">🔎 ກວດສະບັບເຊີບເວີ: <a href="' + esc(SMART_CONFIG.GAS_WEB_APP_URL) + '?version=1" target="_blank" rel="noopener">ເປີດລີ້ງນີ້</a> — ຖ້າອັບເດດສຳເລັດ ຈະເຫັນ <code>"purchase":true</code></div>' : '');
     } else if ((S.d.perm || {}).purchase !== 'edit') {
       nb.style.display = 'block';
       nb.innerHTML = '🔒 ທ່ານຍັງບໍ່ມີສິດ <b>"ສົ່ງໃບສະເໜີຊື້ອະໄຫຼ່"</b> — ໃຫ້ Admin ເປີດສິດໃນໜ້າ "ຈັດການຜູ້ໃຊ້ລະບົບ" → ສ້ອມແປງລົດ-ກົນຈັກ → 🛒 ສົ່ງໃບສະເໜີຊື້ອະໄຫຼ່ = ແກ້ໄຂ.';

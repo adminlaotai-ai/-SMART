@@ -19,7 +19,11 @@ const inject = '\n  <script src="/config.js"></script>\n  <script src="/gas-brid
   '\n  <script src="/pwa.js" defer></script>';
 if (!/<head>/i.test(html)) throw new Error('Index.html ບໍ່ມີ <head>');
 writeFileSync('public/index.html', html.replace(/<head>/i, (m) => m + inject));
-writeFileSync('public/config.js', 'window.SMART_CONFIG = ' + JSON.stringify({ GAS_WEB_APP_URL: url }) + ';\n');
+// ເລກສະບັບຂອງການ build — ແອັບທີ່ຕິດຕັ້ງແລ້ວ ກວດ version.json ເພື່ອອັບເດດຕົວເອງ
+const sha = (process.env.GITHUB_SHA || process.env.VERCEL_GIT_COMMIT_SHA || '').slice(0, 7);
+const version = (sha ? sha + '-' : '') + new Date().toISOString().replace(/[-:]/g, '').slice(0, 13);
+writeFileSync('public/config.js', 'window.SMART_CONFIG = ' + JSON.stringify({ GAS_WEB_APP_URL: url, VERSION: version }) + ';\n');
+writeFileSync('public/version.json', JSON.stringify({ version: version }) + '\n');
 // gas-bridge.js, pwa.js, sw.js, manifest ແລະ icons
 cpSync('web', 'public', { recursive: true });
-console.log('✅ Built public/ (GAS_WEB_APP_URL ' + (url ? 'set' : 'MISSING') + ')');
+console.log('✅ Built public/ v' + version + ' (GAS_WEB_APP_URL ' + (url ? 'set' : 'MISSING') + ')');

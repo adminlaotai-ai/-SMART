@@ -6163,6 +6163,13 @@ var RT = (function () {
     var L = lvl(S.sec), denied = L === 'none';
     ['contracts', 'logs', 'billing', 'payments', 'custbill'].forEach(function (k) { $('rental-content').classList.toggle('rt-no-' + k, lvl(k) !== 'edit'); });
     $('rtDenied').style.display = denied ? 'block' : 'none';
+    // ເຊີບເວີ (Code.gs) ສະບັບເກົ່າ ບໍ່ຮູ້ຈັກໜ້າໃບເກັບເງິນ → ບອກໃຫ້ອັບເດດ ແທນທີ່ຈະບອກວ່າ "ບໍ່ມີສິດ"
+    var oldSrv = S.sec === 'custbill' && S.d && S.d.customers === undefined;
+    if (!$('rtDenied').dataset.orig) $('rtDenied').dataset.orig = $('rtDenied').innerHTML;
+    $('rtDenied').innerHTML = oldSrv ? '<i class="bi bi-cloud-arrow-up" style="font-size:32px;color:#d97706"></i><div class="fw-bold mt-2">ເຊີບເວີຍັງເປັນສະບັບເກົ່າ</div>' +
+      '<div class="small">ກະລຸນາອັບເດດ <b>Code.gs</b> ໃນ Google Apps Script ແລ້ວ Deploy → Manage deployments → Edit → Version: New. ຫຼັງຈາກນັ້ນ ກົດ "ໂຫຼດຂໍ້ມູນໃໝ່".</div>' +
+      ((window.SMART_CONFIG || {}).GAS_WEB_APP_URL ? '<div class="small mt-1">🔎 <a href="' + esc(SMART_CONFIG.GAS_WEB_APP_URL) + '?version=1" target="_blank" rel="noopener">ກວດສະບັບເຊີບເວີ</a> — ຕ້ອງເຫັນ <code>"bills":true</code></div>' : '')
+      : $('rtDenied').dataset.orig;
     document.querySelectorAll('#rental-content section[data-sec]').forEach(function (s) { s.classList.toggle('on', !denied && s.dataset.sec === S.sec); });
     $('rtSub').textContent = 'ຂໍ້ມູນ ' + ld(today()) + ' · ' + (currentUser ? currentUser.name : '') + ' · ' + (L === 'edit' ? 'ສິດແກ້ໄຂ' : L === 'view' ? 'ສິດເບິ່ງຢ່າງດຽວ' : 'ບໍ່ມີສິດ');
   }

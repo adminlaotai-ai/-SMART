@@ -1,0 +1,69 @@
+# ອັບໂຫຼດ Code.gs + Index.html ເຂົ້າ Google Apps Script ແລະ Deploy ເປັນ version ໃໝ່ (URL ເດີມ) ອັດຕະໂນມັດ
+# ຕ້ອງຕັ້ງ (ຄັ້ງດຽວ) ໃນ GitHub → Settings → Secrets and variables → Actions:
+#   Secret   CLASPRC_JSON      = ເນື້ອໃນໄຟລ໌ .clasprc.json (ຫຼັງ `clasp login`)
+#   Variable GAS_SCRIPT_ID     = Script ID (Apps Script → Project Settings → IDs)
+#   Variable GAS_DEPLOYMENT_ID = (ບໍ່ບັງຄັບ) ລະຫັດ deployment — ຄ່າເລີ່ມຕົ້ນຢູ່ລຸ່ມນີ້
+name: Deploy to Google Apps Script
+
+on:
+  push:
+    branches: [main]
+    paths: ['apps-script/**', '.github/workflows/apps-script.yml', 'scripts/gas-sync.mjs']
+  workflow_dispatch:
+
+concurrency:
+  group: apps-script
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+      SCRIPT_ID: ${{ vars.GAS_SCRIPT_ID || secrets.GAS_SCRIPT_ID }}
+      DEPLOYMENT_ID: ${{ vars.GAS_DEPLOYMENT_ID || 'AKfycbye8C16iJBDpvC1btcZ1_z1hZbqbUIyVD1C5qCny1K4HI28SWivogZx10Rl0lCtV4oraA' }}
+    steps:
+      - name: Check setup
+        id: chk
+        run: |
+          if [ -z "$CLASPRC_JSON" ] || [ -z "$SCRIPT_ID" ]; then
+            echo "::warning::ຍັງບໍ່ໄດ້ຕັ້ງ CLASPRC_JSON / GAS_SCRIPT_ID — ຂ້າມການ deploy Apps Script"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.chk.outputs.ready == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.chk.outputs.ready == 'true'
+        with:
+          node-version: 20
+      - name: Install clasp
+        if: steps.chk.outputs.ready == 'true'
+        run: npm install -g @google/clasp@2.4.2
+      - name: Pull project, replace Code.gs + Index.html, push
+        if: steps.chk.outputs.ready == 'true'
+        run: |
+          printf '%s' "$CLASPRC_JSON" > ~/.clasprc.json
+          mkdir -p "$RUNNER_TEMP/gas" && cd "$RUNNER_TEMP/gas"
+          printf '{"scriptId":"%s"}' "$SCRIPT_ID" > .clasp.json
+          clasp pull
+          ls -la
+          node "$GITHUB_WORKSPACE/scripts/gas-sync.mjs" "$RUNNER_TEMP/gas" "$GITHUB_WORKSPACE/apps-script"
+          clasp push --force
+      - name: Deploy new version (same URL)
+        if: steps.chk.outputs.ready == 'true'
+        run: |
+          cd "$RUNNER_TEMP/gas"
+          clasp deploy --deploymentId "$DEPLOYMENT_ID" --description "GitHub ${GITHUB_SHA::7}"
+      - name: Verify server version
+        if: steps.chk.outputs.ready == 'true'
+        run: |
+          want=$(grep -o "SF_SERVER_VERSION = '[^']*'" apps-script/Code.gs | sed "s/.*= '//; s/'$//")
+          for i in 1 2 3 4 5 6; do
+            got=$(curl -sSL "https://script.google.com/macros/s/$DEPLOYMENT_ID/exec?version=1" || true)
+            echo "server: $got"
+            case "$got" in *"$want"*) echo "✅ ເຊີບເວີເປັນສະບັບ: $want"; exit 0;; esac
+            sleep 10
+          done
+          echo "::error::ເຊີບເວີຍັງບໍ່ແມ່ນສະບັບ $want"; exit 1

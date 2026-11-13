@@ -19,11 +19,11 @@ const ALERT_EMAILS = [
 
 // 🌐 WEB APP ENTRY POINT
 // 🏷️ ສະບັບຂອງເຊີບເວີ — ກວດໄດ້ທີ່ <Web App URL>?version=1 (ປ່ຽນທຸກຄັ້ງທີ່ມີຟັງຊັນໃໝ່)
-const SF_SERVER_VERSION = '2026-11-09b · ຖານຂໍ້ມູນລົດກາງ';
+const SF_SERVER_VERSION = '2026-11-13 · ໃບເກັບເງິນລົດເຊົ່າ';
 
 function doGet(e) {
   if (e && e.parameter && e.parameter.version) {
-    return ContentService.createTextOutput(JSON.stringify({ ok: true, version: SF_SERVER_VERSION, purchase: true, cars: true }))
+    return ContentService.createTextOutput(JSON.stringify({ ok: true, version: SF_SERVER_VERSION, purchase: true, cars: true, bills: true }))
       .setMimeType(ContentService.MimeType.JSON);
   }
   return HtmlService.createHtmlOutputFromFile('Index')
@@ -59,17 +59,17 @@ function doPost(e) {
 
 // ລາຍການສິດແບບລະອຽດ (Granular Permissions) - ຕ້ອງກົງກັບ checkbox ຝັ່ງ Client
 const PERMISSION_KEYS = ['recordOut', 'recordIn', 'dashboard', 'tableOut', 'tableIn', 'manageUsers', 'stockSummary', 'dailyReport', 'monthlyReport', 'yearlyReport', 'vehicleUsage', 'carAdd',
-  'rentalContracts', 'rentalLogs', 'rentalBilling', 'rentalPayments', 'rentalReport',
+  'rentalContracts', 'rentalLogs', 'rentalBilling', 'rentalPayments', 'rentalCustBill', 'rentalReport',
   'mtOverview', 'mtRequest', 'mtPurchase', 'mtApprove', 'mtReqEdit', 'mtSigRequester', 'mtSigSite', 'mtSigMech', 'mtSigApprover', 'mtForm', 'mtHistory', 'mtVehicles', 'mtReport'];
 // ສິດປະເພດນີ້ມີ 3 ລະດັບ: 'none' (ບໍ່ມີສິດ) | 'view' (ເບິ່ງຢ່າງດຽວ) | 'edit' (ເບິ່ງ & ແກ້ໄຂ/ລຶບ/ສົ່ງອອກ)
-const LEVELED_PERMISSION_KEYS = ['tableOut', 'tableIn', 'rentalContracts', 'rentalLogs', 'rentalBilling', 'rentalPayments', 'rentalReport', 'mtOverview', 'mtRequest', 'mtPurchase', 'mtApprove', 'mtReqEdit', 'mtSigRequester', 'mtSigSite', 'mtSigMech', 'mtSigApprover', 'mtForm', 'mtHistory', 'mtVehicles', 'mtReport'];
+const LEVELED_PERMISSION_KEYS = ['tableOut', 'tableIn', 'rentalContracts', 'rentalLogs', 'rentalBilling', 'rentalPayments', 'rentalCustBill', 'rentalReport', 'mtOverview', 'mtRequest', 'mtPurchase', 'mtApprove', 'mtReqEdit', 'mtSigRequester', 'mtSigSite', 'mtSigMech', 'mtSigApprover', 'mtForm', 'mtHistory', 'mtVehicles', 'mtReport'];
 // ລະດັບທີ່ອະນຸຍາດສຳລັບບາງໜ້າ (ໜ້າລາຍງານ/ພາບລວມ ມີແຕ່ "ເບິ່ງ", ໜ້າບັນທຶກໃບສ້ອມໃໝ່ ມີແຕ່ "ແກ້ໄຂ")
 const PERMISSION_LEVEL_LIMITS = { rentalReport: ['none', 'view'], mtOverview: ['none', 'view'], mtReport: ['none', 'view'], mtForm: ['none', 'edit'], mtApprove: ['none', 'edit'], mtReqEdit: ['none', 'edit'], mtSigRequester: ['none', 'edit'], mtSigSite: ['none', 'edit'], mtSigMech: ['none', 'edit'], mtSigApprover: ['none', 'edit'] };
 
 // ແປງສິດແບບເກົ່າ (rental / maintenance ອັນດຽວ) ເປັນສິດລາຍໜ້າ — ສຳລັບຜູ້ໃຊ້ທີ່ຕັ້ງສິດໄວ້ກ່ອນອັບເດດ
 function migrateModulePermissions_(p) {
   if (!p || typeof p !== 'object') return p;
-  const groups = { rental: ['rentalContracts', 'rentalLogs', 'rentalBilling', 'rentalPayments', 'rentalReport'], maintenance: ['mtOverview', 'mtRequest', 'mtPurchase', 'mtApprove', 'mtReqEdit', 'mtSigRequester', 'mtSigSite', 'mtSigMech', 'mtSigApprover', 'mtForm', 'mtHistory', 'mtVehicles', 'mtReport'] };
+  const groups = { rental: ['rentalContracts', 'rentalLogs', 'rentalBilling', 'rentalPayments', 'rentalCustBill', 'rentalReport'], maintenance: ['mtOverview', 'mtRequest', 'mtPurchase', 'mtApprove', 'mtReqEdit', 'mtSigRequester', 'mtSigSite', 'mtSigMech', 'mtSigApprover', 'mtForm', 'mtHistory', 'mtVehicles', 'mtReport'] };
   Object.keys(groups).forEach(old => {
     const v = p[old];
     if (!v || v === 'none' || groups[old].some(k => p[k] !== undefined)) return;
@@ -77,6 +77,8 @@ function migrateModulePermissions_(p) {
   });
   // 🛒 ໃບສະເໜີຊື້ອະໄຫຼ່ (ເພີ່ມໃໝ່): ຜູ້ໃຊ້ເກົ່າທີ່ມີສິດ "ສົ່ງໃບສະເໜີສ້ອມແປງ" ໄດ້ສິດລະດັບດຽວກັນ ຈົນກວ່າ Admin ຈະປ່ຽນ
   if (p.mtPurchase === undefined && p.mtRequest) p.mtPurchase = p.mtRequest;
+  // 🧾 ໃບເກັບເງິນລູກຄ້າ (ເພີ່ມໃໝ່): ຜູ້ໃຊ້ເກົ່າທີ່ມີສິດ "ຄິດໄລ່ຄ່າເຊົ່າ" ໄດ້ສິດລະດັບດຽວກັນ
+  if (p.rentalCustBill === undefined && p.rentalBilling) p.rentalCustBill = p.rentalBilling;
   return p;
 }
 
@@ -3486,9 +3488,9 @@ function saveVehicleStations_impl_(requesterUsername, map) {
 const RT_EXPIRY_ALERT_DAYS = 15; // ແຈ້ງເຕືອນກ່ອນສັນຍາໝົດ (ມື້)
 
 // 🔐 ສິດລາຍໜ້າຂອງລົດເຊົ່າ (ກຳນົດໃນໜ້າຈັດການຜູ້ໃຊ້)
-const RT_PAGES = { contracts: 'rentalContracts', logs: 'rentalLogs', billing: 'rentalBilling', payments: 'rentalPayments', report: 'rentalReport' };
-const RT_PAGE_LABELS = { contracts: 'ຜູ້ໃຫ້ເຊົ່າ ແລະ ສັນຍາ', logs: 'ບັນທຶກລົດເຊົ່າປະຈຳວັນ', billing: 'ຄິດໄລ່ຄ່າເຊົ່າ', payments: 'ການຈ່າຍຄ່າເຊົ່າ', report: 'ລາຍງານລົດເຊົ່າ' };
-const RT_KEY_PAGE = { suppliers: 'contracts', contracts: 'contracts', logs: 'logs', payments: 'payments', invoices: 'billing' };
+const RT_PAGES = { contracts: 'rentalContracts', logs: 'rentalLogs', billing: 'rentalBilling', payments: 'rentalPayments', custbill: 'rentalCustBill', report: 'rentalReport' };
+const RT_PAGE_LABELS = { custbill: 'ໃບເກັບເງິນລູກຄ້າ', contracts: 'ຜູ້ໃຫ້ເຊົ່າ ແລະ ສັນຍາ', logs: 'ບັນທຶກລົດເຊົ່າປະຈຳວັນ', billing: 'ຄິດໄລ່ຄ່າເຊົ່າ', payments: 'ການຈ່າຍຄ່າເຊົ່າ', report: 'ລາຍງານລົດເຊົ່າ' };
+const RT_KEY_PAGE = { suppliers: 'contracts', contracts: 'contracts', logs: 'logs', payments: 'payments', invoices: 'billing', customers: 'custbill', bills: 'custbill', receipts: 'custbill' };
 function rtPerm_(user) {
   const o = {};
   Object.keys(RT_PAGES).forEach(pg => {
@@ -3538,6 +3540,20 @@ const RT_SCHEMA = {
   payments: { sheet: 'RT_Payments', prefix: 'PM', cols: [
     ['id', 'ລະຫັດ', 's'], ['date', 'ວັນທີຈ່າຍ', 'd'], ['invoiceId', 'ລະຫັດໃບແຈ້ງໜີ້', 's'], ['supplierId', 'ລະຫັດຜູ້ໃຫ້ເຊົ່າ', 's'],
     ['amountLAK', 'ຈຳນວນເງິນ(ກີບ)', 'n'], ['method', 'ວິທີຈ່າຍ', 's'], ['ref', 'ເລກອ້າງອີງ', 's'], ['note', 'ໝາຍເຫດ', 's'],
+    ['createdAt', 'ວັນທີສ້າງ', 'dt'], ['createdBy', 'ຜູ້ສ້າງ', 's']] },
+  // 🧾 ໃບເກັບເງິນລູກຄ້າ (ບໍລິສັດເກັບເງິນຄ່າເຊົ່າລົດຈາກລູກຄ້າ / ເຈົ້າຂອງໂຄງການ)
+  customers: { sheet: 'RT_Customers', prefix: 'CU', cols: [
+    ['id', 'ລະຫັດ', 's'], ['name', 'ຊື່ລູກຄ້າ / ໂຄງການ', 's'], ['taxId', 'ເລກປະຈຳຕົວຜູ້ເສຍອາກອນ', 's'], ['phone', 'ເບີໂທ', 's'],
+    ['address', 'ທີ່ຢູ່', 's'], ['contact', 'ຜູ້ຕິດຕໍ່', 's'], ['note', 'ໝາຍເຫດ', 's'], ['createdAt', 'ວັນທີສ້າງ', 'dt'], ['createdBy', 'ຜູ້ສ້າງ', 's']] },
+  bills: { sheet: 'RT_Bills', prefix: 'BL', cols: [
+    ['id', 'ລະຫັດ', 's'], ['billNo', 'ເລກທີໃບເກັບເງິນ', 's'], ['date', 'ວັນທີອອກ', 'd'], ['dueDate', 'ກຳນົດຊຳລະ', 'd'],
+    ['customerId', 'ລະຫັດລູກຄ້າ', 's'], ['site', 'ສະໜາມ', 's'], ['month', 'ປະຈຳເດືອນ', 's'], ['items', 'ລາຍການ(JSON)', 's'],
+    ['subtotal', 'ລວມກ່ອນຫຼຸດ(ກີບ)', 'n'], ['discount', 'ສ່ວນຫຼຸດ(ກີບ)', 'n'], ['vatPct', 'VAT %', 'n'], ['vatLAK', 'VAT(ກີບ)', 'n'],
+    ['totalLAK', 'ຍອດລວມ(ກີບ)', 'n'], ['status', 'ສະຖານະ', 's'], ['note', 'ໝາຍເຫດ', 's'],
+    ['createdAt', 'ວັນທີສ້າງ', 'dt'], ['createdBy', 'ຜູ້ສ້າງ', 's']] },
+  receipts: { sheet: 'RT_Receipts', prefix: 'RC', cols: [
+    ['id', 'ລະຫັດ', 's'], ['date', 'ວັນທີຮັບເງິນ', 'd'], ['billId', 'ລະຫັດໃບເກັບເງິນ', 's'], ['customerId', 'ລະຫັດລູກຄ້າ', 's'],
+    ['amountLAK', 'ຈຳນວນເງິນ(ກີບ)', 'n'], ['method', 'ວິທີຮັບ', 's'], ['ref', 'ເລກອ້າງອີງ', 's'], ['note', 'ໝາຍເຫດ', 's'],
     ['createdAt', 'ວັນທີສ້າງ', 'dt'], ['createdBy', 'ຜູ້ສ້າງ', 's']] }
 };
 
@@ -3661,6 +3677,21 @@ function rtWrite_(key, obj, user) {
     if (Number(o.amountLAK) > remain + 0.5) throw new Error('ຈຳນວນເງິນ (' + Math.round(o.amountLAK).toLocaleString('en-US') + ') ເກີນຍອດຄ້າງຂອງໃບແຈ້ງໜີ້ (' + remain.toLocaleString('en-US') + ' ກີບ)');
   }
 
+  if (key === 'customers') need('name', 'ຊື່ລູກຄ້າ / ໂຄງການ');
+  if (key === 'bills') rtPrepareBill_(o, user, allowedSite);
+  if (key === 'receipts') {
+    need('date', 'ວັນທີຮັບເງິນ'); need('billId', 'ໃບເກັບເງິນ');
+    if (!(Number(o.amountLAK) > 0)) throw new Error('ຈຳນວນເງິນຕ້ອງຫຼາຍກວ່າ 0');
+    const bill = rtRead_('bills').find(b => b.id === o.billId);
+    if (!bill) throw new Error('ບໍ່ພົບໃບເກັບເງິນ');
+    if (bill.status === 'cancelled') throw new Error('ໃບເກັບເງິນນີ້ຖືກຍົກເລີກແລ້ວ');
+    allowedSite(bill.site);
+    o.customerId = bill.customerId;
+    const got = rtRead_('receipts').filter(r => r.billId === bill.id && r.id !== o.id).reduce((t, r) => t + Number(r.amountLAK || 0), 0);
+    const remain = Math.round(Number(bill.totalLAK || 0) - got);
+    if (Number(o.amountLAK) > remain + 0.5) throw new Error('ຈຳນວນເງິນ (' + Math.round(o.amountLAK).toLocaleString('en-US') + ') ເກີນຍອດຄ້າງຮັບ (' + remain.toLocaleString('en-US') + ' ກີບ)');
+  }
+
   const row = rtFindRow_(sh, o.id);
   if (row > 0) {
     const old = rtRead_(key).find(x => x.id === o.id) || {};
@@ -3771,6 +3802,47 @@ function rtCalcMonth_(month, d, fieldIdx) {
   return out;
 }
 
+/** 🧾 ກວດ ແລະ ຄິດໄລ່ໃບເກັບເງິນລູກຄ້າ (ເລກທີ, ຍອດລວມ, VAT) ກ່ອນບັນທຶກ */
+function rtPrepareBill_(o, user, allowedSite) {
+  if (!o.date) throw new Error('ກະລຸນາໃສ່: ວັນທີອອກ');
+  if (!o.customerId) throw new Error('ກະລຸນາເລືອກລູກຄ້າ');
+  if (!rtRead_('customers').some(c => c.id === o.customerId)) throw new Error('ບໍ່ພົບລູກຄ້າ');
+  if (!o.site) throw new Error('ກະລຸນາເລືອກສະໜາມ');
+  allowedSite(o.site);
+  if (o.dueDate && o.dueDate < o.date) throw new Error('ກຳນົດຊຳລະ ຕ້ອງບໍ່ກ່ອນວັນທີອອກ');
+  if (o.month && !/^\d{4}-\d{2}$/.test(o.month)) throw new Error('ຮູບແບບເດືອນບໍ່ຖືກ (yyyy-MM)');
+  let items = [];
+  try { items = JSON.parse(o.items || '[]'); } catch (e) { items = []; }
+  items = (Array.isArray(items) ? items : []).map(it => ({ desc: String(it.desc || '').trim().slice(0, 200), qty: Number(it.qty) || 0, unit: String(it.unit || '').trim().slice(0, 20),
+    price: Number(it.price) || 0, contractId: String(it.contractId || '').slice(0, 40) })).filter(it => it.desc).slice(0, 60);
+  if (!items.length) throw new Error('ກະລຸນາໃສ່ລາຍການຢ່າງໜ້ອຍ 1 ລາຍການ');
+  items.forEach(it => { if (it.qty <= 0) throw new Error('ຈຳນວນຂອງ "' + it.desc + '" ຕ້ອງຫຼາຍກວ່າ 0'); if (it.price < 0) throw new Error('ລາຄາຕ້ອງບໍ່ຕິດລົບ'); });
+  o.items = JSON.stringify(items);
+  o.subtotal = items.reduce((t, it) => t + Math.round(it.qty * it.price), 0);
+  o.discount = Math.round(Number(o.discount) || 0);
+  if (o.discount < 0 || o.discount > o.subtotal) throw new Error('ສ່ວນຫຼຸດບໍ່ຖືກຕ້ອງ');
+  o.vatPct = Number(o.vatPct) || 0;
+  if (o.vatPct < 0 || o.vatPct > 100) throw new Error('VAT % ບໍ່ຖືກຕ້ອງ');
+  o.vatLAK = Math.round((o.subtotal - o.discount) * o.vatPct / 100);
+  o.totalLAK = o.subtotal - o.discount + o.vatLAK;
+  const all = rtRead_('bills'), old = o.id ? all.find(b => b.id === o.id) : null;
+  if (o.id && !old) throw new Error('ບໍ່ພົບໃບເກັບເງິນ');
+  const got = old ? rtRead_('receipts').filter(r => r.billId === old.id).reduce((t, r) => t + Number(r.amountLAK || 0), 0) : 0;
+  if (old) {
+    if (old.status === 'cancelled') throw new Error('ໃບເກັບເງິນນີ້ຖືກຍົກເລີກແລ້ວ — ແກ້ໄຂບໍ່ໄດ້');
+    allowedSite(old.site);
+    o.billNo = old.billNo;
+    if (o.status === 'cancelled') { if (got > 0) throw new Error('ຍົກເລີກບໍ່ໄດ້: ມີການຮັບເງິນແລ້ວ — ລຶບການຮັບເງິນກ່ອນ'); }
+    else o.status = 'issued';
+    if (o.status !== 'cancelled' && o.totalLAK < got - 0.5) throw new Error('ຍອດລວມໃໝ່ ໜ້ອຍກວ່າເງິນທີ່ຮັບແລ້ວ (' + Math.round(got).toLocaleString('en-US') + ' ກີບ)');
+  } else {
+    o.status = 'issued';
+    const ym = o.date.slice(2, 4) + o.date.slice(5, 7);
+    const seq = all.filter(b => String(b.billNo).indexOf('INV' + ym + '-') === 0).length + 1;
+    o.billNo = 'INV' + ym + '-' + ('00' + seq).slice(-3);
+  }
+}
+
 /** ອ່ານຂໍ້ມູນທີ່ຜູ້ໃຊ້ຄົນນີ້ມີສິດເຫັນ */
 function rtScoped_(user) {
   const restrict = rtRestrict_(user);
@@ -3778,10 +3850,13 @@ function rtScoped_(user) {
   const ids = new Set(contracts.map(c => c.id));
   const invoices = rtRead_('invoices').filter(i => ids.has(i.contractId));
   const invIds = new Set(invoices.map(i => i.id));
+  const bills = rtRead_('bills').filter(b => !restrict || restrict.includes(b.site));
+  const billIds = new Set(bills.map(b => b.id));
   return {
     suppliers: rtRead_('suppliers'), contracts: contracts,
     logs: rtRead_('logs').filter(l => ids.has(l.contractId)),
-    invoices: invoices, payments: rtRead_('payments').filter(p => invIds.has(p.invoiceId))
+    invoices: invoices, payments: rtRead_('payments').filter(p => invIds.has(p.invoiceId)),
+    customers: rtRead_('customers'), bills: bills, receipts: rtRead_('receipts').filter(r => billIds.has(r.billId))
   };
 }
 
@@ -3839,6 +3914,8 @@ function rtDelete_impl_(requesterUsername, key, id) {
     if (key === 'contracts' && (rtRead_('logs').some(l => l.contractId === id) || rtRead_('invoices').some(i => i.contractId === id)))
       throw new Error('ລຶບບໍ່ໄດ້: ສັນຍານີ້ມີບັນທຶກ ຫຼື ໃບແຈ້ງໜີ້ແລ້ວ — ໃຫ້ປ່ຽນສະຖານະເປັນ "ປິດສັນຍາ" ແທນ');
     if (key === 'invoices' && rtRead_('payments').some(p => p.invoiceId === id)) throw new Error('ລຶບບໍ່ໄດ້: ໃບແຈ້ງໜີ້ນີ້ມີການຈ່າຍເງິນແລ້ວ');
+    if (key === 'customers' && rtRead_('bills').some(b => b.customerId === id)) throw new Error('ລຶບບໍ່ໄດ້: ລູກຄ້ານີ້ມີໃບເກັບເງິນແລ້ວ');
+    if (key === 'bills' && rtRead_('receipts').some(r => r.billId === id)) throw new Error('ລຶບບໍ່ໄດ້: ໃບເກັບເງິນນີ້ມີການຮັບເງິນແລ້ວ — ໃຫ້ລຶບການຮັບເງິນກ່ອນ');
     if (key === 'logs') { const lg = rtRead_('logs').find(l => l.id === id); if (lg) rtAssertMonthOpen_(lg.contractId, lg.date); }
     const sh = rtSheet_(key), row = rtFindRow_(sh, id);
     if (row > 0) sh.deleteRow(row);
@@ -3852,7 +3929,8 @@ function rtDelete_impl_(requesterUsername, key, id) {
 
 function rtComputeBilling_impl_(requesterUsername, month) {
   try {
-    const user = rtRequire_(requesterUsername, 'billing', 'view');
+    const user = requireActiveUser_(requesterUsername);
+    if (!hasPermission_(user, RT_PAGES.billing, 'view') && !hasPermission_(user, RT_PAGES.custbill, 'view')) throw new Error('ທ່ານບໍ່ມີສິດເບິ່ງການຄິດໄລ່ຄ່າເຊົ່າ');
     rtCheckMonth_(month);
     return { success: true, rows: rtCalcMonth_(month, rtScoped_(user), rtFieldIndex_()) };
   } catch (e) {

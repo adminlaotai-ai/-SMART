@@ -539,6 +539,12 @@
         <li class="nav-item w-100" id="rental-payments-tab-li" data-perm="rentalPayments" style="display:none;">
           <button class="nav-link w-100" id="rental-payments-tab" onclick="switchTab('rental-payments')"><i class="bi bi-cash-coin"></i> ການຈ່າຍຄ່າເຊົ່າ</button>
         </li>
+        <li class="nav-item w-100" id="rental-custbill-tab-li" data-perm="rentalCustBill" style="display:none;">
+          <button class="nav-link w-100" id="rental-custbill-tab" onclick="switchTab('rental-custbill')"><i class="bi bi-receipt"></i> ໃບເກັບເງິນລູກຄ້າ</button>
+        </li>
+        <li class="nav-item w-100" id="rental-supinv-tab-li" data-perm="rentalBilling|rentalPayments" style="display:none;">
+          <button class="nav-link w-100" id="rental-supinv-tab" onclick="switchTab('rental-supinv')"><i class="bi bi-file-earmark-ruled"></i> ໃບແຈ້ງໜີ້ຜູ້ໃຫ້ເຊົ່າ</button>
+        </li>
         <li class="nav-item w-100" id="rental-report-tab-li" data-perm="rentalReport" style="display:none;">
           <button class="nav-link w-100" id="rental-report-tab" onclick="switchTab('rental-report')"><i class="bi bi-bar-chart-line"></i> ລາຍງານລົດເຊົ່າ</button>
         </li>
@@ -1813,7 +1819,15 @@
           #rental-content section[data-sec].on{display:block}
           #rental-content .rt-addbtn{white-space:nowrap;font-size:12.5px}
           #rental-content .input-group>.rt-need-contracts>.btn{border-top-left-radius:0;border-bottom-left-radius:0}
-          #rental-content.rt-no-contracts .rt-need-contracts,#rental-content.rt-no-logs .rt-need-logs,#rental-content.rt-no-billing .rt-need-billing,#rental-content.rt-no-payments .rt-need-payments{display:none!important}
+          #rental-content.rt-no-contracts .rt-need-contracts,#rental-content.rt-no-logs .rt-need-logs,#rental-content.rt-no-billing .rt-need-billing,#rental-content.rt-no-payments .rt-need-payments,#rental-content.rt-no-custbill .rt-need-custbill{display:none!important}
+          #rental-content .rt-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+          #rental-content .rt-chips button{border:1px solid #cbd5e1;background:#fff;border-radius:99px;padding:3px 12px;font-size:12.5px;font-weight:600;color:#475569}
+          #rental-content .rt-chips button.on{background:var(--primary-color);border-color:var(--primary-color);color:#fff}
+          #rental-content .rt-chips b{margin-left:4px;font-variant-numeric:tabular-nums}
+          #rental-content .rt-blrow{display:grid;grid-template-columns:3fr .7fr .8fr 1.1fr 1fr auto;gap:6px;align-items:end;padding:6px 0;border-bottom:1px dashed #e2e8f0}
+          #rental-content .rt-blrow label{font-size:11px;font-weight:600;color:#64748b;display:flex;flex-direction:column;gap:2px;margin:0}
+          #rental-content .rt-blrow .amt{font-size:12.5px;font-weight:700;text-align:right;padding-bottom:6px;font-variant-numeric:tabular-nums}
+          @media (max-width:768px){#rental-content .rt-blrow{grid-template-columns:1fr 1fr 1fr}#rental-content .rt-blrow .ds{grid-column:1/-1}}
           #rental-content .rt-denied{background:#fff;border-radius:14px;padding:40px 16px;text-align:center;color:#64748b;box-shadow:var(--shadow-card)}
           #rtPrint{display:none}
           @media print{
@@ -2015,6 +2029,90 @@
           <div class="rt-box"><h6><i class="bi bi-clock-history"></i> ປະຫວັດການຈ່າຍເງິນ</h6><div class="rt-tbl"><table>
             <thead><tr><th>ວັນທີ</th><th>ໃບແຈ້ງໜີ້</th><th>ຜູ້ໃຫ້ເຊົ່າ</th><th class="n">ຈຳນວນ (ກີບ)</th><th>ວິທີ</th><th>ອ້າງອີງ</th><th class="rt-need-payments"></th></tr></thead>
             <tbody id="rtPmBody"></tbody></table></div></div>
+        </section>
+
+        <!-- ===== 4.5 🧾 ໃບເກັບເງິນລູກຄ້າ ===== -->
+        <section data-sec="custbill">
+          <div class="rt-cards">
+            <div class="rt-card" style="--c:#1a365d"><div class="t">ອອກໃບເກັບເງິນເດືອນນີ້ (ກີບ)</div><div class="v" id="rtBcMonth">–</div><div class="s" id="rtBcMonthS"></div></div>
+            <div class="rt-card" style="--c:#16a34a"><div class="t">ຮັບເງິນແລ້ວເດືອນນີ້ (ກີບ)</div><div class="v" id="rtBcRecv">–</div><div class="s" id="rtBcRecvS"></div></div>
+            <div class="rt-card" style="--c:#ff8c00"><div class="t">ຍອດຄ້າງຮັບທັງໝົດ (ກີບ)</div><div class="v" id="rtBcOwe">–</div><div class="s" id="rtBcOweS"></div></div>
+            <div class="rt-card" style="--c:#e74c3c"><div class="t">ເກີນກຳນົດຊຳລະ</div><div class="v" id="rtBcLate">–</div><div class="s" id="rtBcLateS"></div></div>
+          </div>
+          <form id="rtBlForm" class="rt-need-custbill" onsubmit="return RT.saveBill(event)">
+            <input type="hidden" name="id">
+            <div class="rt-box">
+              <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                <h6 class="mb-0" id="rtBlTitle"><i class="bi bi-receipt"></i> ອອກໃບເກັບເງິນລູກຄ້າ</h6>
+                <button type="button" class="btn btn-sm btn-outline-warning fw-bold" onclick="RT.billPull()"><i class="bi bi-download"></i> ດຶງລາຍການຈາກລົດເຊົ່າ</button>
+              </div>
+              <div class="rt-grid">
+                <label class="rt-wide">ລູກຄ້າ / ໂຄງການ *<div class="input-group input-group-sm"><select class="form-select form-select-sm" name="customerId" id="rtBlCu" required></select><button type="button" class="btn btn-success fw-bold" onclick="RT.quickCustomer()" title="ເພີ່ມລູກຄ້າໃໝ່" aria-label="ເພີ່ມລູກຄ້າໃໝ່">+ ລູກຄ້າ</button></div></label>
+                <label>ວັນທີອອກ *<input class="form-control form-control-sm" type="date" name="date" required></label>
+                <label>ກຳນົດຊຳລະ<input class="form-control form-control-sm" type="date" name="dueDate"></label>
+                <label>ສະໜາມ *<select class="form-select form-select-sm" name="site" id="rtBlSite" required></select></label>
+                <label>ປະຈຳເດືອນ<input class="form-control form-control-sm" type="month" name="month" id="rtBlMonth"></label>
+                <label>ສ່ວນຫຼຸດ (ກີບ)<input class="form-control form-control-sm" type="number" name="discount" min="0" step="1" value="0" oninput="RT.billCalc()"></label>
+                <label>VAT %<input class="form-control form-control-sm" type="number" name="vatPct" min="0" max="100" step="any" value="0" oninput="RT.billCalc()"></label>
+                <label class="rt-wide">ໝາຍເຫດ / ເງື່ອນໄຂການຊຳລະ<input class="form-control form-control-sm" name="note" placeholder="ຕົວຢ່າງ: ໂອນເຂົ້າບັນຊີ BCEL 010-12-00-xxxx"></label>
+              </div>
+            </div>
+            <div class="rt-box">
+              <div class="d-flex justify-content-between align-items-center mb-1"><h6 class="mb-0"><i class="bi bi-list-ol"></i> ລາຍການ</h6>
+                <button type="button" class="btn btn-sm btn-outline-primary fw-bold" onclick="RT.billAddItem()"><i class="bi bi-plus"></i> ເພີ່ມລາຍການ</button></div>
+              <div id="rtBlItems"></div>
+              <div class="d-flex flex-wrap justify-content-end mt-3"><div class="text-end small" id="rtBlSum"></div></div>
+              <hr>
+              <div class="d-flex flex-wrap justify-content-end gap-2">
+                <button type="button" class="btn btn-sm btn-secondary" onclick="RT.newBill()">ລ້າງຟອມ</button>
+                <button class="btn btn-sm btn-primary fw-bold px-3" style="background:var(--primary-color)" id="rtBlSave">💾 ບັນທຶກໃບເກັບເງິນ</button>
+              </div>
+            </div>
+          </form>
+          <div class="rt-box">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+              <h6 class="mb-0" id="rtBlCount"><i class="bi bi-receipt-cutoff"></i> ລາຍການໃບເກັບເງິນ</h6>
+              <button class="btn btn-sm btn-success fw-bold" onclick="RT.exportBills()"><i class="bi bi-file-earmark-excel"></i> Export Excel</button>
+            </div>
+            <div class="rt-chips" id="rtBlChips"></div>
+            <div class="rt-filters">
+              <label>ລູກຄ້າ<select class="form-select form-select-sm" id="rtBlQC" onchange="RT.renderBills()"></select></label>
+              <label>ສະໜາມ<select class="form-select form-select-sm" id="rtBlQS" onchange="RT.renderBills()"></select></label>
+              <label>ຈາກວັນທີ<input class="form-control form-control-sm" type="date" id="rtBlQF" onchange="RT.renderBills()"></label>
+              <label>ຫາວັນທີ<input class="form-control form-control-sm" type="date" id="rtBlQT" onchange="RT.renderBills()"></label>
+              <label>ຄົ້ນຫາ<input class="form-control form-control-sm" id="rtBlQ" oninput="RT.renderBills()" placeholder="ເລກທີ, ລູກຄ້າ, ທະບຽນ…"></label>
+            </div>
+            <div class="rt-tbl"><table>
+              <thead><tr><th>ເລກທີ / ວັນທີ</th><th>ລູກຄ້າ</th><th>ສະໜາມ / ເດືອນ</th><th class="n">ຍອດລວມ (ກີບ)</th><th class="n">ຮັບແລ້ວ</th><th class="n">ຄ້າງຮັບ</th><th>ສະຖານະ</th><th></th></tr></thead>
+              <tbody id="rtBlBody"></tbody>
+            </table></div>
+          </div>
+          <div class="rt-box"><h6><i class="bi bi-cash-stack"></i> ປະຫວັດການຮັບເງິນ</h6><div class="rt-tbl"><table>
+            <thead><tr><th>ວັນທີ</th><th>ໃບເກັບເງິນ</th><th>ລູກຄ້າ</th><th class="n">ຈຳນວນ (ກີບ)</th><th>ວິທີ</th><th>ອ້າງອີງ</th><th></th></tr></thead>
+            <tbody id="rtRcBody"></tbody></table></div></div>
+        </section>
+
+        <!-- ===== 4.6 📄 ໃບແຈ້ງໜີ້ຜູ້ໃຫ້ເຊົ່າ (ທີ່ບໍລິສັດຕ້ອງຈ່າຍ) ===== -->
+        <section data-sec="supinv">
+          <div class="rt-box">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+              <h6 class="mb-0" id="rtSiCount"><i class="bi bi-file-earmark-ruled"></i> ໃບແຈ້ງໜີ້ຜູ້ໃຫ້ເຊົ່າ</h6>
+              <button class="btn btn-sm btn-success fw-bold" onclick="RT.exportSupInv()"><i class="bi bi-file-earmark-excel"></i> Export Excel</button>
+            </div>
+            <div class="rt-chips" id="rtSiChips"></div>
+            <div class="rt-filters">
+              <label>ຈາກເດືອນ<input class="form-control form-control-sm" type="month" id="rtSiF" onchange="RT.renderSupInv()"></label>
+              <label>ຫາເດືອນ<input class="form-control form-control-sm" type="month" id="rtSiT" onchange="RT.renderSupInv()"></label>
+              <label>ຜູ້ໃຫ້ເຊົ່າ<select class="form-select form-select-sm" id="rtSiSup" onchange="RT.renderSupInv()"></select></label>
+              <label>ສະໜາມ<select class="form-select form-select-sm" id="rtSiSite" onchange="RT.renderSupInv()"></select></label>
+            </div>
+            <div class="rt-tbl"><table>
+              <thead><tr><th>ເລກທີ / ເດືອນ</th><th>ລົດ</th><th>ຜູ້ໃຫ້ເຊົ່າ</th><th>ສະໜາມ</th><th class="n">ຍອດຕ້ອງຈ່າຍ</th><th class="n">ຈ່າຍແລ້ວ</th><th class="n">ຄ້າງ</th><th>ສະຖານະ</th><th></th></tr></thead>
+              <tbody id="rtSiBody"></tbody>
+              <tfoot id="rtSiFoot"></tfoot>
+            </table></div>
+            <p class="rt-mini mt-2 mb-0">ໃບແຈ້ງໜີ້ສ້າງຈາກໜ້າ "ຄິດໄລ່ຄ່າເຊົ່າ". ກົດ "ຈ່າຍ" ເພື່ອບັນທຶກການຈ່າຍໃນໜ້າ "ການຈ່າຍຄ່າເຊົ່າ".</p>
+          </div>
         </section>
 
         <!-- ===== 5. ລາຍງານ ===== -->
@@ -3046,6 +3144,10 @@
                     <div class="col-6">
                       <label class="form-label small mb-1 d-block" for="perm_rentalPayments">ການຈ່າຍຄ່າເຊົ່າ</label>
                       <select class="form-select form-select-sm" id="perm_rentalPayments"><option value="none">ບໍ່ມີສິດ</option><option value="view">ເບິ່ງ</option><option value="edit">ແກ້ໄຂ</option></select>
+                    </div>
+                    <div class="col-6">
+                      <label class="form-label small mb-1 d-block" for="perm_rentalCustBill">🧾 ໃບເກັບເງິນລູກຄ້າ</label>
+                      <select class="form-select form-select-sm" id="perm_rentalCustBill"><option value="none">ບໍ່ມີສິດ</option><option value="view">ເບິ່ງ</option><option value="edit">ແກ້ໄຂ</option></select>
                     </div>
                     <div class="col-6">
                       <label class="form-label small mb-1 d-block" for="perm_rentalReport">ລາຍງານລົດເຊົ່າ</label>
@@ -5010,9 +5112,9 @@ function executeStockSubmit(formObj) {
   }
 
   const PERMISSION_LABELS = { carAdd: 'ເພີ່ມລົດໃໝ່', recordOut: 'ບັນທຶກອອກ', recordIn: 'ບັນທຶກເຂົ້າ', dashboard: 'ແດຊບອດ', tableOut: 'ຕາຕະລາງອອກ', tableIn: 'ຕາຕະລາງເຂົ້າ', manageUsers: 'ຈັດການຜູ້ໃຊ້', stockSummary: 'ຄັງນ້ຳມັນຄົງເຫຼືອ', dailyReport: 'ລາຍງານປະຈຳວັນ', monthlyReport: 'ລາຍງານປະຈຳເດືອນ', yearlyReport: 'ລາຍງານປະຈຳປີ', vehicleUsage: 'ນຳໃຊ້ລົດ',
-    rentalContracts: 'ເຊົ່າ·ຜູ້ໃຫ້ເຊົ່າ ແລະ ສັນຍາ', rentalLogs: 'ເຊົ່າ·ບັນທຶກປະຈຳວັນ', rentalBilling: 'ເຊົ່າ·ຄິດໄລ່ຄ່າເຊົ່າ', rentalPayments: 'ເຊົ່າ·ການຈ່າຍຄ່າເຊົ່າ', rentalReport: 'ເຊົ່າ·ລາຍງານລົດເຊົ່າ', mtOverview: 'ສ້ອມ·ພາບລວມ ແລະ ກຳນົດປ່ຽນ', mtRequest: 'ສ້ອມ·ສົ່ງໃບສະເໜີສ້ອມແປງ', mtPurchase: 'ສ້ອມ·ສົ່ງໃບສະເໜີຊື້ອະໄຫຼ່', mtApprove: 'ສ້ອມ·🔐 ອະນຸມັດ / ບໍ່ອະນຸມັດ ໃບສະເໜີ', mtReqEdit: 'ສ້ອມ·🔐 ແກ້ໄຂ / ຍົກເລີກ ໃບສະເໜີ', mtSigRequester: 'ສ້ອມ·✍️ ລົງນາມ: ຜູ້ສະເໜີ', mtSigSite: 'ສ້ອມ·✍️ ລົງນາມ: ຫົວໜ້າສະໜາມ', mtSigMech: 'ສ້ອມ·✍️ ລົງນາມ: ພະແນກກົນຈັກ', mtSigApprover: 'ສ້ອມ·✍️ ລົງນາມ: ຜູ້ອະນຸມັດ', mtForm: 'ສ້ອມ·ບັນທຶກໃບສ້ອມໃໝ່', mtHistory: 'ສ້ອມ·ປະຫວັດ', mtVehicles: 'ສ້ອມ·ທະບຽນລົດ-ກົນຈັກ', mtReport: 'ສ້ອມ·ລາຍງານຄ່າສ້ອມແປງ' };
-  const LEVELED_PERMISSION_KEYS = ['tableOut', 'tableIn', 'rentalContracts', 'rentalLogs', 'rentalBilling', 'rentalPayments', 'rentalReport', 'mtOverview', 'mtRequest', 'mtPurchase', 'mtApprove', 'mtReqEdit', 'mtSigRequester', 'mtSigSite', 'mtSigMech', 'mtSigApprover', 'mtForm', 'mtHistory', 'mtVehicles', 'mtReport'];
-  const MODULE_PERMISSION_GROUPS = { rental: ['rentalContracts', 'rentalLogs', 'rentalBilling', 'rentalPayments', 'rentalReport'], mt: ['mtOverview', 'mtRequest', 'mtPurchase', 'mtApprove', 'mtReqEdit', 'mtSigRequester', 'mtSigSite', 'mtSigMech', 'mtSigApprover', 'mtForm', 'mtHistory', 'mtVehicles', 'mtReport'] };
+    rentalContracts: 'ເຊົ່າ·ຜູ້ໃຫ້ເຊົ່າ ແລະ ສັນຍາ', rentalLogs: 'ເຊົ່າ·ບັນທຶກປະຈຳວັນ', rentalBilling: 'ເຊົ່າ·ຄິດໄລ່ຄ່າເຊົ່າ', rentalPayments: 'ເຊົ່າ·ການຈ່າຍຄ່າເຊົ່າ', rentalCustBill: 'ເຊົ່າ·ໃບເກັບເງິນລູກຄ້າ', rentalReport: 'ເຊົ່າ·ລາຍງານລົດເຊົ່າ', mtOverview: 'ສ້ອມ·ພາບລວມ ແລະ ກຳນົດປ່ຽນ', mtRequest: 'ສ້ອມ·ສົ່ງໃບສະເໜີສ້ອມແປງ', mtPurchase: 'ສ້ອມ·ສົ່ງໃບສະເໜີຊື້ອະໄຫຼ່', mtApprove: 'ສ້ອມ·🔐 ອະນຸມັດ / ບໍ່ອະນຸມັດ ໃບສະເໜີ', mtReqEdit: 'ສ້ອມ·🔐 ແກ້ໄຂ / ຍົກເລີກ ໃບສະເໜີ', mtSigRequester: 'ສ້ອມ·✍️ ລົງນາມ: ຜູ້ສະເໜີ', mtSigSite: 'ສ້ອມ·✍️ ລົງນາມ: ຫົວໜ້າສະໜາມ', mtSigMech: 'ສ້ອມ·✍️ ລົງນາມ: ພະແນກກົນຈັກ', mtSigApprover: 'ສ້ອມ·✍️ ລົງນາມ: ຜູ້ອະນຸມັດ', mtForm: 'ສ້ອມ·ບັນທຶກໃບສ້ອມໃໝ່', mtHistory: 'ສ້ອມ·ປະຫວັດ', mtVehicles: 'ສ້ອມ·ທະບຽນລົດ-ກົນຈັກ', mtReport: 'ສ້ອມ·ລາຍງານຄ່າສ້ອມແປງ' };
+  const LEVELED_PERMISSION_KEYS = ['tableOut', 'tableIn', 'rentalContracts', 'rentalLogs', 'rentalBilling', 'rentalPayments', 'rentalCustBill', 'rentalReport', 'mtOverview', 'mtRequest', 'mtPurchase', 'mtApprove', 'mtReqEdit', 'mtSigRequester', 'mtSigSite', 'mtSigMech', 'mtSigApprover', 'mtForm', 'mtHistory', 'mtVehicles', 'mtReport'];
+  const MODULE_PERMISSION_GROUPS = { rental: ['rentalContracts', 'rentalLogs', 'rentalBilling', 'rentalPayments', 'rentalCustBill', 'rentalReport'], mt: ['mtOverview', 'mtRequest', 'mtPurchase', 'mtApprove', 'mtReqEdit', 'mtSigRequester', 'mtSigSite', 'mtSigMech', 'mtSigApprover', 'mtForm', 'mtHistory', 'mtVehicles', 'mtReport'] };
 
   // ຕັ້ງສິດທັງກຸ່ມ (ໃນຟອມຈັດການຜູ້ໃຊ້) — ຖ້າໜ້າໃດບໍ່ມີລະດັບນັ້ນ ຈະໃຊ້ລະດັບທີ່ໃກ້ທີ່ສຸດ
   function setModulePerms(group, level) {
@@ -5218,9 +5320,9 @@ function executeStockSubmit(formObj) {
 
   function applyRolePreset(roleVal) {
     if (roleVal === 'Edit') {
-      setPermissionCheckboxes({ recordOut: true, recordIn: true, dashboard: true, tableOut: 'edit', tableIn: 'edit', manageUsers: false, stockSummary: true, dailyReport: true, monthlyReport: true, yearlyReport: true, vehicleUsage: true, rentalContracts: 'edit', rentalLogs: 'edit', rentalBilling: 'edit', rentalPayments: 'edit', rentalReport: 'view', mtOverview: 'view', mtRequest: 'edit', mtPurchase: 'edit', mtApprove: 'none', mtReqEdit: 'none', mtSigRequester: 'none', mtSigSite: 'none', mtSigMech: 'none', mtSigApprover: 'none', mtForm: 'edit', mtHistory: 'edit', mtVehicles: 'edit', mtReport: 'view' });
+      setPermissionCheckboxes({ recordOut: true, recordIn: true, dashboard: true, tableOut: 'edit', tableIn: 'edit', manageUsers: false, stockSummary: true, dailyReport: true, monthlyReport: true, yearlyReport: true, vehicleUsage: true, rentalContracts: 'edit', rentalLogs: 'edit', rentalBilling: 'edit', rentalPayments: 'edit', rentalCustBill: 'edit', rentalReport: 'view', mtOverview: 'view', mtRequest: 'edit', mtPurchase: 'edit', mtApprove: 'none', mtReqEdit: 'none', mtSigRequester: 'none', mtSigSite: 'none', mtSigMech: 'none', mtSigApprover: 'none', mtForm: 'edit', mtHistory: 'edit', mtVehicles: 'edit', mtReport: 'view' });
     } else if (roleVal === 'View') {
-      setPermissionCheckboxes({ recordOut: false, recordIn: false, dashboard: true, tableOut: 'view', tableIn: 'view', manageUsers: false, stockSummary: true, dailyReport: true, monthlyReport: true, yearlyReport: true, rentalContracts: 'view', rentalLogs: 'view', rentalBilling: 'view', rentalPayments: 'view', rentalReport: 'view', mtOverview: 'view', mtRequest: 'view', mtPurchase: 'view', mtApprove: 'none', mtReqEdit: 'none', mtSigRequester: 'none', mtSigSite: 'none', mtSigMech: 'none', mtSigApprover: 'none', mtForm: 'none', mtHistory: 'view', mtVehicles: 'view', mtReport: 'view' });
+      setPermissionCheckboxes({ recordOut: false, recordIn: false, dashboard: true, tableOut: 'view', tableIn: 'view', manageUsers: false, stockSummary: true, dailyReport: true, monthlyReport: true, yearlyReport: true, rentalContracts: 'view', rentalLogs: 'view', rentalBilling: 'view', rentalPayments: 'view', rentalCustBill: 'view', rentalReport: 'view', mtOverview: 'view', mtRequest: 'view', mtPurchase: 'view', mtApprove: 'none', mtReqEdit: 'none', mtSigRequester: 'none', mtSigSite: 'none', mtSigMech: 'none', mtSigApprover: 'none', mtForm: 'none', mtHistory: 'view', mtVehicles: 'view', mtReport: 'view' });
     }
   }
 
@@ -6000,7 +6102,7 @@ var RT = (function () {
   var UNIT = { hour: 'ຊມ', day: 'ມື້', month: 'ເດືອນ' };
   var DAY = { work: ['ເຮັດວຽກ', 'p-ok'], standby: ['ລໍຖ້າວຽກ', 'p-info'], breakdown: ['ລົດເສຍ', 'p-bad'], off: ['ມື້ພັກ', 'p-mute'] };
   var CST = { active: ['ໃຊ້ງານ', 'p-ok'], expiring: ['ໃກ້ໝົດ', 'p-warn'], expired: ['ໝົດອາຍຸ', 'p-bad'], upcoming: ['ຍັງບໍ່ເລີ່ມ', 'p-info'], closed: ['ປິດແລ້ວ', 'p-mute'] };
-  var TITLES = { contracts: '📑 ຜູ້ໃຫ້ເຊົ່າ ແລະ ສັນຍາເຊົ່າລົດ', logs: '📋 ບັນທຶກລົດເຊົ່າປະຈຳວັນ', billing: '🧮 ຄິດໄລ່ຄ່າເຊົ່າປະຈຳເດືອນ', payments: '💵 ການຈ່າຍຄ່າເຊົ່າ', report: '📊 ລາຍງານລົດເຊົ່າ' };
+  var TITLES = { custbill: '🧾 ໃບເກັບເງິນລູກຄ້າ (ຄ່າເຊົ່າລົດ)', supinv: '📄 ໃບແຈ້ງໜີ້ຜູ້ໃຫ້ເຊົ່າ', contracts: '📑 ຜູ້ໃຫ້ເຊົ່າ ແລະ ສັນຍາເຊົ່າລົດ', logs: '📋 ບັນທຶກລົດເຊົ່າປະຈຳວັນ', billing: '🧮 ຄິດໄລ່ຄ່າເຊົ່າປະຈຳເດືອນ', payments: '💵 ການຈ່າຍຄ່າເຊົ່າ', report: '📊 ລາຍງານລົດເຊົ່າ' };
   var ALERT_DAYS = 15;
 
   function $(id) { return document.getElementById(id); }
@@ -6052,10 +6154,14 @@ var RT = (function () {
   }
 
   /* ---------- ເປີດໜ້າ (ເອີ້ນຈາກ switchTab) ---------- */
-  function lvl(sec) { return (S.d && S.d.perm && S.d.perm[sec]) || 'none'; }
+  function lvl(sec) {
+    var P = (S.d && S.d.perm) || {};
+    if (sec === 'supinv') { var a = P.billing || 'none', b = P.payments || 'none'; return (a === 'edit' || b === 'edit') ? 'edit' : (a === 'view' || b === 'view') ? 'view' : 'none'; }
+    return P[sec] || 'none';
+  }
   function applyPerm() {
     var L = lvl(S.sec), denied = L === 'none';
-    ['contracts', 'logs', 'billing', 'payments'].forEach(function (k) { $('rental-content').classList.toggle('rt-no-' + k, lvl(k) !== 'edit'); });
+    ['contracts', 'logs', 'billing', 'payments', 'custbill'].forEach(function (k) { $('rental-content').classList.toggle('rt-no-' + k, lvl(k) !== 'edit'); });
     $('rtDenied').style.display = denied ? 'block' : 'none';
     document.querySelectorAll('#rental-content section[data-sec]').forEach(function (s) { s.classList.toggle('on', !denied && s.dataset.sec === S.sec); });
     $('rtSub').textContent = 'ຂໍ້ມູນ ' + ld(today()) + ' · ' + (currentUser ? currentUser.name : '') + ' · ' + (L === 'edit' ? 'ສິດແກ້ໄຂ' : L === 'view' ? 'ສິດເບິ່ງຢ່າງດຽວ' : 'ບໍ່ມີສິດ');
@@ -6282,6 +6388,16 @@ var RT = (function () {
 
     renderTypes();
     renderContracts(); renderSuppliers(); renderLogs(); renderInvoices(); renderInvoiceSelect(); renderPayments();
+    // 🧾 ໃບເກັບເງິນລູກຄ້າ + 📄 ໃບແຈ້ງໜີ້ຜູ້ໃຫ້ເຊົ່າ
+    setSel('rtBlCu', opts((d.customers || []).map(function (c) { return [c.id, c.name]; }), '— ເລືອກລູກຄ້າ —'));
+    setSel('rtBlQC', opts((d.customers || []).map(function (c) { return [c.id, c.name]; }), 'ທຸກລູກຄ້າ'));
+    setSel('rtBlSite', opts(siteList, '— ເລືອກສະໜາມ —'));
+    setSel('rtBlQS', opts(siteList, 'ທຸກສະໜາມ'));
+    setSel('rtSiSup', opts(d.suppliers.map(function (s) { return [s.id, s.name]; }), 'ທຸກຜູ້ໃຫ້ເຊົ່າ'));
+    setSel('rtSiSite', opts(siteList, 'ທຸກສະໜາມ'));
+    if (!$('rtSiF').value) { $('rtSiF').value = m.slice(0, 4) + '-01'; $('rtSiT').value = m; }
+    if (!$('rtBlForm').querySelector('[name=id]').value && !$('rtBlForm').querySelector('[name=date]').value) newBill(true);
+    renderBills(); renderSupInv();
     if (S.sec === 'report') renderReport();
   }
 
@@ -6486,8 +6602,332 @@ var RT = (function () {
       '<tr><th>ຍອດຄ້າງ (ກີບ)</th><th class="n">' + fmt(Math.max(0, i.netLAK - p)) + '</th></tr></table>' + sigs());
   }
 
+
+  /* ==================== 🧾 ໃບເກັບເງິນລູກຄ້າ ==================== */
+  var BST = { unpaid: ['ຍັງບໍ່ຮັບ', 'p-warn'], partial: ['ຮັບບາງສ່ວນ', 'p-info'], paid: ['ຮັບຄົບ', 'p-ok'], overdue: ['ເກີນກຳນົດ', 'p-bad'], cancelled: ['ຍົກເລີກ', 'p-mute'] };
+  var BF = { st: 'open' };
+  function cu(id) { return (S.d.customers || []).find(function (c) { return c.id === id; }) || { name: '-' }; }
+  function bill(id) { return (S.d.bills || []).find(function (b) { return b.id === id; }); }
+  function bItems(b) { try { var a = JSON.parse(b.items || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
+  function recvOf(id) { return (S.d.receipts || []).filter(function (r) { return r.billId === id; }).reduce(function (t, r) { return t + Number(r.amountLAK || 0); }, 0); }
+  function bState(b) {
+    if (b.status === 'cancelled') return 'cancelled';
+    var got = recvOf(b.id), owe = Number(b.totalLAK || 0) - got;
+    if (owe <= 0.5) return 'paid';
+    if (b.dueDate && b.dueDate < today()) return 'overdue';
+    return got > 0 ? 'partial' : 'unpaid';
+  }
+  function canBill() { return lvl('custbill') === 'edit'; }
+
+  function newBill(silent) {
+    var f = $('rtBlForm'); f.reset(); f.querySelector('[name=id]').value = '';
+    f.querySelector('[name=date]').value = today();
+    var d = new Date(today()); d.setDate(d.getDate() + 15);
+    f.querySelector('[name=dueDate]').value = d.toISOString().slice(0, 10);
+    $('rtBlMonth').value = today().slice(0, 7);
+    if (S.d && S.d.stations.length === 1) $('rtBlSite').value = S.d.stations[0];
+    $('rtBlItems').innerHTML = ''; billAddItem();
+    $('rtBlTitle').innerHTML = '<i class="bi bi-receipt"></i> ອອກໃບເກັບເງິນລູກຄ້າ';
+    $('rtBlSave').textContent = '💾 ບັນທຶກໃບເກັບເງິນ';
+    billCalc();
+    if (silent !== true) $('rtBlForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  function billAddItem(it) {
+    it = it || {};
+    var d = document.createElement('div'); d.className = 'rt-blrow'; d.dataset.ct = it.contractId || '';
+    d.innerHTML = '<label class="ds">ລາຍການ *<input class="form-control form-control-sm" data-f="desc" value="' + esc(it.desc) + '" placeholder="ຕົວຢ່າງ: ຄ່າເຊົ່າລົດຂຸດ PC200 ເດືອນ 11/2026"></label>' +
+      '<label>ຈຳນວນ<input class="form-control form-control-sm" type="number" data-f="qty" min="0" step="any" value="' + (it.qty === undefined ? 1 : esc(it.qty)) + '"></label>' +
+      '<label>ໜ່ວຍ<input class="form-control form-control-sm" data-f="unit" value="' + esc(it.unit === undefined ? 'ເດືອນ' : it.unit) + '"></label>' +
+      '<label>ລາຄາ/ໜ່ວຍ (ກີບ)<input class="form-control form-control-sm" type="number" data-f="price" min="0" step="any" value="' + esc(it.price === undefined ? 0 : it.price) + '"></label>' +
+      '<div class="amt" data-amt>0</div>' +
+      '<button type="button" class="btn btn-sm btn-outline-danger" title="ລຶບແຖວ" aria-label="ລຶບແຖວ"><i class="bi bi-x-lg"></i></button>';
+    d.querySelector('button').onclick = function () { d.remove(); billCalc(); };
+    d.addEventListener('input', billCalc);
+    $('rtBlItems').appendChild(d); billCalc();
+  }
+  function billItems() {
+    return Array.prototype.map.call(document.querySelectorAll('#rtBlItems .rt-blrow'), function (row) {
+      var o = { contractId: row.dataset.ct || '' }; row.querySelectorAll('[data-f]').forEach(function (i) { o[i.dataset.f] = i.value.trim(); }); return o;
+    }).filter(function (x) { return x.desc; });
+  }
+  function billCalc() {
+    var f = $('rtBlForm'), sub = 0;
+    document.querySelectorAll('#rtBlItems .rt-blrow').forEach(function (row) {
+      var a = Math.round((Number(row.querySelector('[data-f=qty]').value) || 0) * (Number(row.querySelector('[data-f=price]').value) || 0));
+      row.querySelector('[data-amt]').textContent = fmt(a);
+      if (row.querySelector('[data-f=desc]').value.trim()) sub += a;
+    });
+    var disc = Math.round(Number(f.querySelector('[name=discount]').value) || 0), vp = Number(f.querySelector('[name=vatPct]').value) || 0;
+    var vat = Math.round((sub - disc) * vp / 100), tot = sub - disc + vat;
+    $('rtBlSum').innerHTML = 'ລວມ: <b>' + fmt(sub) + '</b> ກີບ' + (disc ? ' · ສ່ວນຫຼຸດ: −' + fmt(disc) : '') + (vp ? ' · VAT ' + fmt2(vp) + '%: ' + fmt(vat) : '') +
+      '<div style="font-size:20px;font-weight:700;color:var(--primary-color)">ຍອດລວມ: ' + fmt(tot) + ' ກີບ</div>';
+    return tot;
+  }
+  /** ດຶງລາຍການຄ່າເຊົ່າຂອງເດືອນ (ຈາກບັນທຶກປະຈຳວັນ) ມາເປັນລາຍການໃນໃບເກັບເງິນ */
+  function billPull() {
+    var m = $('rtBlMonth').value, site = $('rtBlSite').value;
+    if (!m) { fail('ກະລຸນາເລືອກ "ປະຈຳເດືອນ" ກ່ອນ'); return; }
+    loading('ກຳລັງຄິດໄລ່ຄ່າເຊົ່າ ' + lm(m) + '…');
+    call('rtComputeBilling', m).then(function (r) {
+      var rows = (r.rows || []).filter(function (x) { return !site || x.site === site; });
+      if (!rows.length) { Swal.fire({ icon: 'info', title: 'ບໍ່ມີລາຍການ', text: 'ບໍ່ມີລົດເຊົ່າໃນເດືອນ ' + lm(m) + (site ? ' ທີ່ສະໜາມ ' + site : '') }); return; }
+      var used = {}; billItems().forEach(function (it) { if (it.contractId) used[it.contractId] = 1; });
+      Swal.fire({
+        title: 'ເລືອກລົດທີ່ຈະເກັບເງິນ · ' + lm(m), width: 760,
+        html: '<div style="text-align:left;font-size:13px;max-height:50vh;overflow:auto">' + rows.map(function (x, i) {
+          var c = ct(x.contractId);
+          return '<label style="display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:1px dashed #e2e8f0"><input type="checkbox" class="bpick" value="' + i + '"' + (used[x.contractId] ? ' disabled' : ' checked') + '>' +
+            '<span><b>' + esc(x.plate) + '</b> ' + esc(x.vehicle || '') + ' · ' + esc(x.site) + (used[x.contractId] ? ' <i>(ມີໃນໃບນີ້ແລ້ວ)</i>' : '') +
+            '<br><span style="color:#64748b">' + esc(RATE[x.rateType] || '') + ' · ' + fmt2(x.qty) + ' ' + esc(x.unit) + ' · ຄ່າເຊົ່າຈ່າຍຜູ້ໃຫ້ເຊົ່າ ' + fmt(x.grossLAK - x.breakdownLAK) + ' ກີບ' + (c.vehicleType ? ' · ' + esc(c.vehicleType) : '') + '</span></span></label>';
+        }).join('') + '</div><div style="text-align:left;font-size:11.5px;color:#64748b;margin-top:8px">ລາຄາຈະຕັ້ງຕາມອັດຕາສັນຍາ — ແກ້ລາຄາເກັບລູກຄ້າໄດ້ໃນຕາຕະລາງລາຍການ.</div>',
+        showCancelButton: true, confirmButtonText: 'ເພີ່ມລາຍການ', cancelButtonText: 'ຍົກເລີກ',
+        preConfirm: function () { return Array.prototype.map.call(document.querySelectorAll('.bpick:checked'), function (c) { return rows[Number(c.value)]; }); }
+      }).then(function (x) {
+        if (!x.isConfirmed || !x.value.length) return;
+        var blank = billItems().length === 0; if (blank) $('rtBlItems').innerHTML = '';
+        x.value.forEach(function (row) {
+          var c = ct(row.contractId), period = ld(row.periodStart) + '–' + ld(row.periodEnd);
+          var desc = 'ຄ່າເຊົ່າ' + (c.vehicleType ? c.vehicleType + ' ' : 'ລົດ ') + row.plate + (row.vehicle ? ' (' + row.vehicle + ')' : '') + ' · ' + period;
+          if (row.rateType === 'month') billAddItem({ desc: desc + (row.breakdownDays ? ' (ຫັກລົດເສຍ ' + row.breakdownDays + ' ມື້)' : ''), qty: 1, unit: 'ເດືອນ', price: Math.max(0, row.grossLAK - row.breakdownLAK), contractId: row.contractId });
+          else billAddItem({ desc: desc, qty: row.qty, unit: row.unit, price: Math.round(row.rate * (row.fx || 1)), contractId: row.contractId });
+        });
+        if (!$('rtBlSite').value && x.value[0]) $('rtBlSite').value = x.value[0].site;
+        billCalc();
+      });
+    }).catch(fail);
+  }
+  function saveBill(ev) {
+    ev.preventDefault();
+    var o = formData($('rtBlForm')), its = billItems();
+    if (!its.length) { fail('ກະລຸນາໃສ່ລາຍການຢ່າງໜ້ອຍ 1 ລາຍການ'); return false; }
+    o.items = JSON.stringify(its.map(function (x) { return { desc: x.desc, qty: Number(x.qty) || 0, unit: x.unit, price: Number(x.price) || 0, contractId: x.contractId }; }));
+    loading('ກຳລັງບັນທຶກ…');
+    call('rtSave', 'bills', o).then(function (r) {
+      S.d = r.data; renderAll();
+      var b = (S.d.bills || []).filter(function (x) { return o.id ? x.id === o.id : true; }).sort(function (a, c) { return a.createdAt < c.createdAt ? 1 : -1; })[0];
+      newBill(true);
+      Swal.fire({ icon: 'success', title: (o.id ? 'ແກ້ໄຂແລ້ວ ' : 'ອອກໃບເກັບເງິນແລ້ວ ') + (b ? b.billNo : ''), showCancelButton: true, confirmButtonText: '🖨️ ພິມໃບເກັບເງິນ', cancelButtonText: 'ປິດ' })
+        .then(function (x) { if (x.isConfirmed && b) printBill(b.id); });
+    }).catch(fail);
+    return false;
+  }
+  function editBill(id) {
+    var b = bill(id); if (!b) return;
+    if (recvOf(id) > 0) Swal.fire({ toast: true, position: 'top-end', icon: 'info', timer: 3500, showConfirmButton: false, title: 'ໃບນີ້ມີການຮັບເງິນແລ້ວ — ຍອດລວມໃໝ່ຕ້ອງບໍ່ໜ້ອຍກວ່າເງິນທີ່ຮັບ' });
+    newBill(true); fillForm($('rtBlForm'), b);
+    $('rtBlItems').innerHTML = ''; var its = bItems(b); (its.length ? its : [{}]).forEach(billAddItem);
+    $('rtBlTitle').innerHTML = '<i class="bi bi-pencil-square"></i> ແກ້ໄຂໃບເກັບເງິນ ' + esc(b.billNo);
+    $('rtBlSave').textContent = '💾 ບັນທຶກການແກ້ໄຂ';
+    billCalc(); $('rtBlForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  function cancelBill(id) {
+    var b = bill(id); if (!b) return;
+    Swal.fire({ icon: 'warning', title: 'ຍົກເລີກໃບເກັບເງິນ ' + esc(b.billNo) + '?', text: 'ໃບທີ່ຍົກເລີກຈະຍັງຢູ່ໃນລາຍການ ແຕ່ບໍ່ນັບຍອດ', showCancelButton: true, confirmButtonText: 'ຍົກເລີກໃບນີ້', cancelButtonText: 'ປິດ', confirmButtonColor: '#e74c3c' })
+      .then(function (x) {
+        if (!x.isConfirmed) return;
+        var o = Object.assign({}, b, { status: 'cancelled' });
+        loading(); call('rtSave', 'bills', o).then(function (r) { S.d = r.data; renderAll(); ok('ຍົກເລີກແລ້ວ'); }).catch(fail);
+      });
+  }
+  function receive(id) {
+    var b = bill(id); if (!b) return;
+    var owe = Math.round(Number(b.totalLAK) - recvOf(id));
+    var L = function (t, inner) { return '<label style="display:block;text-align:left;font-size:12px;font-weight:600;color:#64748b;margin-top:8px">' + t + inner + '</label>'; };
+    Swal.fire({
+      title: '💵 ຮັບເງິນ · ' + esc(b.billNo),
+      html: '<div style="text-align:left;font-size:13px">' + esc(cu(b.customerId).name) + ' · ຄ້າງຮັບ <b>' + fmt(owe) + ' ກີບ</b></div>' +
+        L('ວັນທີຮັບເງິນ *', '<input id="rcDate" type="date" class="form-control" value="' + today() + '">') +
+        L('ຈຳນວນເງິນ (ກີບ) *', '<input id="rcAmt" type="number" min="1" step="1" class="form-control" value="' + owe + '">') +
+        L('ວິທີຮັບ', '<select id="rcM" class="form-select"><option>ໂອນຜ່ານທະນາຄານ</option><option>ເງິນສົດ</option><option>ເຊັກ</option></select>') +
+        L('ເລກອ້າງອີງ / ເລກໃບໂອນ', '<input id="rcRef" class="form-control">') + L('ໝາຍເຫດ', '<input id="rcNote" class="form-control">'),
+      showCancelButton: true, confirmButtonText: '💾 ບັນທຶກການຮັບເງິນ', cancelButtonText: 'ປິດ', focusConfirm: false,
+      preConfirm: function () {
+        var o = { date: $('rcDate').value, billId: id, amountLAK: $('rcAmt').value, method: $('rcM').value, ref: $('rcRef').value.trim(), note: $('rcNote').value.trim() };
+        if (!o.date) { Swal.showValidationMessage('ກະລຸນາໃສ່ວັນທີ'); return false; }
+        if (!(Number(o.amountLAK) > 0) || Number(o.amountLAK) > owe + 0.5) { Swal.showValidationMessage('ຈຳນວນເງິນຕ້ອງ 1 – ' + fmt(owe) + ' ກີບ'); return false; }
+        return o;
+      }
+    }).then(function (x) {
+      if (!x.isConfirmed) return;
+      loading('ກຳລັງບັນທຶກ…');
+      call('rtSave', 'receipts', x.value).then(function (r) { S.d = r.data; renderAll(); ok('ບັນທຶກການຮັບເງິນແລ້ວ'); }).catch(fail);
+    });
+  }
+  function quickCustomer() {
+    var L = function (t, inner) { return '<label style="display:block;text-align:left;font-size:12px;font-weight:600;color:#64748b;margin-top:8px">' + t + inner + '</label>'; };
+    Swal.fire({
+      title: '➕ ເພີ່ມລູກຄ້າໃໝ່',
+      html: L('ຊື່ລູກຄ້າ / ໂຄງການ *', '<input id="qcName" class="form-control">') +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 10px">' + L('ເບີໂທ', '<input id="qcPhone" class="form-control" inputmode="tel">') + L('ຜູ້ຕິດຕໍ່', '<input id="qcContact" class="form-control">') + '</div>' +
+        L('ເລກປະຈຳຕົວຜູ້ເສຍອາກອນ', '<input id="qcTax" class="form-control">') + L('ທີ່ຢູ່', '<input id="qcAddr" class="form-control">'),
+      showCancelButton: true, confirmButtonText: '💾 ບັນທຶກ', cancelButtonText: 'ຍົກເລີກ', focusConfirm: false,
+      didOpen: function () { $('qcName').focus(); },
+      preConfirm: function () {
+        var o = { name: $('qcName').value.trim(), phone: $('qcPhone').value.trim(), contact: $('qcContact').value.trim(), taxId: $('qcTax').value.trim(), address: $('qcAddr').value.trim() };
+        if (!o.name) { Swal.showValidationMessage('ກະລຸນາໃສ່ຊື່ລູກຄ້າ'); return false; }
+        if ((S.d.customers || []).some(function (c) { return String(c.name).trim().toLowerCase() === o.name.toLowerCase(); })) { Swal.showValidationMessage('ມີຊື່ນີ້ແລ້ວ — ເລືອກຈາກລາຍການ'); return false; }
+        return o;
+      }
+    }).then(function (x) {
+      if (!x.isConfirmed) return;
+      loading('ກຳລັງບັນທຶກ…');
+      call('rtSave', 'customers', x.value).then(function (r) {
+        S.d = r.data; renderAll();
+        var c = (S.d.customers || []).filter(function (c) { return c.name === x.value.name; }).pop(); if (c) $('rtBlCu').value = c.id;
+        ok('ເພີ່ມລູກຄ້າ ' + x.value.name + ' ແລ້ວ');
+      }).catch(fail);
+    });
+  }
+  function bFilter(st) { BF.st = st; renderBills(); }
+  function filteredBills() {
+    var qc = $('rtBlQC').value, qs = $('rtBlQS').value, fr = $('rtBlQF').value, to = $('rtBlQT').value, q = $('rtBlQ').value.trim().toLowerCase();
+    return (S.d.bills || []).filter(function (b) {
+      if (qc && b.customerId !== qc) return false;
+      if (qs && b.site !== qs) return false;
+      if (fr && b.date < fr) return false;
+      if (to && b.date > to) return false;
+      if (q && [b.billNo, cu(b.customerId).name, b.site, b.note, bItems(b).map(function (i) { return i.desc; }).join(' ')].join(' ').toLowerCase().indexOf(q) < 0) return false;
+      return true;
+    });
+  }
+  function renderBills() {
+    if (!S.d) return;
+    var base = filteredBills(), cnt = {};
+    base.forEach(function (b) { var s = bState(b); cnt[s] = (cnt[s] || 0) + 1; });
+    var openN = (cnt.unpaid || 0) + (cnt.partial || 0) + (cnt.overdue || 0);
+    var chips = [['open', 'ຍັງຮັບບໍ່ຄົບ', openN], ['overdue', 'ເກີນກຳນົດ', cnt.overdue || 0], ['unpaid', 'ຍັງບໍ່ຮັບ', cnt.unpaid || 0], ['partial', 'ຮັບບາງສ່ວນ', cnt.partial || 0],
+      ['paid', 'ຮັບຄົບ', cnt.paid || 0], ['cancelled', 'ຍົກເລີກ', cnt.cancelled || 0], ['', 'ທັງໝົດ', base.length]];
+    $('rtBlChips').innerHTML = chips.map(function (c) { return '<button type="button" class="' + (BF.st === c[0] ? 'on' : '') + '" onclick="RT.bFilter(\'' + c[0] + '\')">' + c[1] + '<b>' + c[2] + '</b></button>'; }).join('');
+    var list = base.filter(function (b) { var s = bState(b); return !BF.st || (BF.st === 'open' ? ['unpaid', 'partial', 'overdue'].indexOf(s) >= 0 : s === BF.st); })
+      .sort(function (a, b) { return a.date === b.date ? (a.billNo < b.billNo ? 1 : -1) : (a.date < b.date ? 1 : -1); });
+    $('rtBlCount').innerHTML = '<i class="bi bi-receipt-cutoff"></i> ລາຍການໃບເກັບເງິນ (' + list.length + ')';
+    var E = canBill();
+    $('rtBlBody').innerHTML = list.length ? list.map(function (b) {
+      var s = bState(b), got = recvOf(b.id), owe = s === 'cancelled' ? 0 : Math.max(0, Number(b.totalLAK) - got), btn = [];
+      btn.push('<button class="btn btn-sm btn-outline-secondary py-0 px-2" title="ພິມໃບເກັບເງິນ" aria-label="ພິມໃບເກັບເງິນ" onclick="RT.printBill(\'' + esc(b.id) + '\')"><i class="bi bi-printer"></i></button>');
+      if (E && s !== 'cancelled') {
+        if (owe > 0.5) btn.push('<button class="btn btn-sm btn-success py-0 px-2" onclick="RT.receive(\'' + esc(b.id) + '\')">💵 ຮັບເງິນ</button>');
+        btn.push('<button class="btn btn-sm btn-outline-primary py-0 px-2" title="ແກ້ໄຂ" aria-label="ແກ້ໄຂ" onclick="RT.editBill(\'' + esc(b.id) + '\')"><i class="bi bi-pencil"></i></button>');
+        if (!got) btn.push('<button class="btn btn-sm btn-outline-secondary py-0 px-2" title="ຍົກເລີກໃບເກັບເງິນ" aria-label="ຍົກເລີກໃບເກັບເງິນ" onclick="RT.cancelBill(\'' + esc(b.id) + '\')"><i class="bi bi-slash-circle"></i></button>');
+      }
+      if (E && s === 'cancelled') btn.push('<button class="btn btn-sm btn-outline-danger py-0 px-2" title="ລຶບ" aria-label="ລຶບ" onclick="RT.del(\'bills\',\'' + esc(b.id) + '\')"><i class="bi bi-trash"></i></button>');
+      var its = bItems(b);
+      return '<tr><td><b>' + esc(b.billNo) + '</b><div class="rt-mini">' + ld(b.date) + (b.dueDate ? ' · ກຳນົດ ' + ld(b.dueDate) : '') + '</div></td>' +
+        '<td>' + esc(cu(b.customerId).name) + '<div class="rt-mini">' + its.length + ' ລາຍການ</div></td><td>' + esc(b.site) + (b.month ? '<div class="rt-mini">' + lm(b.month) + '</div>' : '') + '</td>' +
+        '<td class="n">' + fmt(b.totalLAK) + (Number(b.vatLAK) ? '<div class="rt-mini">VAT ' + fmt(b.vatLAK) + '</div>' : '') + '</td><td class="n">' + fmt(got) + '</td><td class="n">' + (owe > 0.5 ? '<b>' + fmt(owe) + '</b>' : '-') + '</td>' +
+        '<td>' + pill(BST[s]) + '</td><td><div class="d-flex flex-wrap gap-1">' + btn.join('') + '</div></td></tr>';
+    }).join('') : '<tr><td colspan="8" class="rt-mini">' + ((S.d.bills || []).length ? 'ບໍ່ມີໃບເກັບເງິນຕາມເງື່ອນໄຂ.' : 'ຍັງບໍ່ມີໃບເກັບເງິນ.') + '</td></tr>';
+
+    var rc = (S.d.receipts || []).slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; });
+    $('rtRcBody').innerHTML = rc.length ? rc.map(function (r) {
+      var b = bill(r.billId) || {};
+      return '<tr><td>' + ld(r.date) + '</td><td>' + esc(b.billNo || r.billId) + '</td><td>' + esc(cu(r.customerId).name) + '</td><td class="n">' + fmt(r.amountLAK) + '</td><td>' + esc(r.method) + '</td><td>' + esc(r.ref) + '</td>' +
+        '<td style="white-space:nowrap"><button class="btn btn-sm btn-outline-secondary py-0 px-2" title="ພິມໃບຮັບເງິນ" aria-label="ພິມໃບຮັບເງິນ" onclick="RT.printReceipt(\'' + esc(r.id) + '\')"><i class="bi bi-printer"></i></button>' +
+        (E ? ' <button class="btn btn-sm btn-outline-danger py-0 px-2" title="ລຶບ" aria-label="ລຶບ" onclick="RT.del(\'receipts\',\'' + esc(r.id) + '\')"><i class="bi bi-trash"></i></button>' : '') + '</td></tr>';
+    }).join('') : '<tr><td colspan="7" class="rt-mini">ຍັງບໍ່ມີການຮັບເງິນ.</td></tr>';
+
+    var all = (S.d.bills || []).filter(function (b) { return b.status !== 'cancelled'; }), m = today().slice(0, 7);
+    var mb = all.filter(function (b) { return String(b.date).slice(0, 7) === m; });
+    $('rtBcMonth').textContent = fmt(mb.reduce(function (t, b) { return t + Number(b.totalLAK || 0); }, 0)); $('rtBcMonthS').textContent = mb.length + ' ໃບ';
+    var mr = (S.d.receipts || []).filter(function (r) { return String(r.date).slice(0, 7) === m; });
+    $('rtBcRecv').textContent = fmt(mr.reduce(function (t, r) { return t + Number(r.amountLAK || 0); }, 0)); $('rtBcRecvS').textContent = mr.length + ' ຄັ້ງ';
+    var oweAll = 0, oweN = 0, late = 0, lateAmt = 0;
+    all.forEach(function (b) { var o = Number(b.totalLAK) - recvOf(b.id); if (o > 0.5) { oweAll += o; oweN++; if (bState(b) === 'overdue') { late++; lateAmt += o; } } });
+    $('rtBcOwe').textContent = fmt(oweAll); $('rtBcOweS').textContent = oweN + ' ໃບຍັງຮັບບໍ່ຄົບ';
+    $('rtBcLate').textContent = late; $('rtBcLateS').textContent = late ? fmt(lateAmt) + ' ກີບ' : 'ບໍ່ມີ';
+  }
+  function exportBills() {
+    var list = filteredBills();
+    var r1 = [['ເລກທີ', 'ວັນທີອອກ', 'ກຳນົດຊຳລະ', 'ລູກຄ້າ', 'ເລກອາກອນ', 'ສະໜາມ', 'ເດືອນ', 'ລວມ', 'ສ່ວນຫຼຸດ', 'VAT %', 'VAT', 'ຍອດລວມ(ກີບ)', 'ຮັບແລ້ວ', 'ຄ້າງຮັບ', 'ສະຖານະ', 'ໝາຍເຫດ', 'ຜູ້ສ້າງ']];
+    var r2 = [['ເລກທີ', 'ລູກຄ້າ', 'ລາຍການ', 'ຈຳນວນ', 'ໜ່ວຍ', 'ລາຄາ/ໜ່ວຍ', 'ເປັນເງິນ']];
+    list.forEach(function (b) {
+      var s = bState(b), got = recvOf(b.id), c = cu(b.customerId);
+      r1.push([b.billNo, ld(b.date), ld(b.dueDate), c.name, c.taxId || '', b.site, lm(b.month), b.subtotal, b.discount, b.vatPct, b.vatLAK, b.totalLAK, got, s === 'cancelled' ? 0 : Math.max(0, b.totalLAK - got), BST[s][0], b.note, b.createdBy]);
+      bItems(b).forEach(function (i) { r2.push([b.billNo, c.name, i.desc, i.qty, i.unit, i.price, Math.round(i.qty * i.price)]); });
+    });
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(r1), 'ໃບເກັບເງິນ');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(r2), 'ລາຍການ');
+    XLSX.writeFile(wb, 'Rental_Invoices_' + today() + '.xlsx');
+  }
+  function printBill(id) {
+    var b = bill(id); if (!b) return;
+    var c = cu(b.customerId), its = bItems(b), got = recvOf(b.id), s = bState(b);
+    var tr = function (a, v, strong) { return '<tr><td colspan="5" style="text-align:right">' + (strong ? '<b>' + a + '</b>' : a) + '</td><td class="n">' + (strong ? '<b>' + v + '</b>' : v) + '</td></tr>'; };
+    printNow(head('ໃບເກັບເງິນ / INVOICE' + (s === 'cancelled' ? ' <span style="color:#b91c1c">(ຍົກເລີກ)</span>' : '')) +
+      '<table><tr><td style="width:55%;vertical-align:top"><b>ເກັບເງິນຈາກ / Bill to:</b><br><b style="font-size:15px">' + esc(c.name) + '</b>' +
+      (c.address ? '<br>' + esc(c.address) : '') + (c.taxId ? '<br>ເລກປະຈຳຕົວຜູ້ເສຍອາກອນ: ' + esc(c.taxId) : '') + (c.phone ? '<br>ໂທ: ' + esc(c.phone) : '') + (c.contact ? ' · ຜູ້ຕິດຕໍ່: ' + esc(c.contact) : '') + '</td>' +
+      '<td style="vertical-align:top">ເລກທີ / No.: <b>' + esc(b.billNo) + '</b><br>ວັນທີ / Date: <b>' + ld(b.date) + '</b>' + (b.dueDate ? '<br>ກຳນົດຊຳລະ / Due: <b>' + ld(b.dueDate) + '</b>' : '') +
+      '<br>ສະໜາມ: ' + esc(b.site) + (b.month ? '<br>ປະຈຳເດືອນ: ' + lm(b.month) : '') + '</td></tr></table>' +
+      '<table><tr><th style="width:36px">#</th><th>ລາຍການ / Description</th><th class="n">ຈຳນວນ</th><th>ໜ່ວຍ</th><th class="n">ລາຄາ/ໜ່ວຍ</th><th class="n">ເປັນເງິນ (ກີບ)</th></tr>' +
+      its.map(function (i, k) { return '<tr><td>' + (k + 1) + '</td><td>' + esc(i.desc) + '</td><td class="n">' + fmt2(i.qty) + '</td><td>' + esc(i.unit) + '</td><td class="n">' + fmt(i.price) + '</td><td class="n">' + fmt(Math.round(i.qty * i.price)) + '</td></tr>'; }).join('') +
+      tr('ລວມ / Subtotal', fmt(b.subtotal)) + (Number(b.discount) ? tr('ສ່ວນຫຼຸດ / Discount', '−' + fmt(b.discount)) : '') +
+      (Number(b.vatPct) ? tr('ອາກອນມູນຄ່າເພີ່ມ / VAT ' + fmt2(b.vatPct) + '%', fmt(b.vatLAK)) : '') + tr('ຍອດລວມທັງໝົດ / TOTAL (ກີບ)', fmt(b.totalLAK), true) +
+      (got ? tr('ຮັບແລ້ວ / Paid', fmt(got)) + tr('ຍອດຄ້າງ / Balance due', fmt(Math.max(0, b.totalLAK - got)), true) : '') + '</table>' +
+      (b.note ? '<p style="font-size:13px"><b>ໝາຍເຫດ:</b> ' + esc(b.note) + '</p>' : '') +
+      '<p style="font-size:12px">ພິມວັນທີ ' + ld(today()) + ' · ໂດຍ ' + esc(currentUser ? currentUser.name : '') + '</p>' +
+      '<div class="sig"><div>ຜູ້ອອກໃບເກັບເງິນ</div><div>ພະແນກບັນຊີ</div><div>ຜູ້ອຳນວຍການ</div><div>ລູກຄ້າ / ຜູ້ຮັບ</div></div>');
+  }
+  function printReceipt(id) {
+    var r = (S.d.receipts || []).find(function (x) { return x.id === id; }); if (!r) return;
+    var b = bill(r.billId) || {}, c = cu(r.customerId), got = recvOf(r.billId);
+    printNow(head('ໃບຮັບເງິນ / RECEIPT') +
+      '<table><tr><td>ເລກທີ: <b>' + esc(r.id) + '</b></td><td>ວັນທີ: <b>' + ld(r.date) + '</b></td></tr>' +
+      '<tr><td colspan="2">ໄດ້ຮັບເງິນຈາກ: <b>' + esc(c.name) + '</b></td></tr>' +
+      '<tr><td>ຕາມໃບເກັບເງິນ: <b>' + esc(b.billNo || r.billId) + '</b> (' + ld(b.date) + ')</td><td>ວິທີ: ' + esc(r.method) + (r.ref ? ' · ອ້າງອີງ: ' + esc(r.ref) : '') + '</td></tr>' +
+      '<tr><th>ຈຳນວນເງິນທີ່ໄດ້ຮັບ (ກີບ)</th><th class="n" style="font-size:18px">' + fmt(r.amountLAK) + '</th></tr>' +
+      '<tr><td>ຍອດໃບເກັບເງິນ</td><td class="n">' + fmt(b.totalLAK) + '</td></tr><tr><td>ຍອດຄ້າງຫຼັງຮັບເງິນທັງໝົດ</td><td class="n">' + fmt(Math.max(0, Number(b.totalLAK || 0) - got)) + '</td></tr></table>' +
+      (r.note ? '<p style="font-size:13px">ໝາຍເຫດ: ' + esc(r.note) + '</p>' : '') +
+      '<div class="sig"><div>ຜູ້ຈ່າຍເງິນ</div><div>ຜູ້ຮັບເງິນ</div><div>ພະແນກບັນຊີ</div><div>ຜູ້ອຳນວຍການ</div></div>');
+  }
+
+  /* ==================== 📄 ໃບແຈ້ງໜີ້ຜູ້ໃຫ້ເຊົ່າ ==================== */
+  var SF = { st: 'open' };
+  function siState(i) { var p = paidOf(i.id), o = Number(i.netLAK) - p; return o <= 0.5 ? 'paid' : p > 0 ? 'partial' : 'unpaid'; }
+  var SIST = { unpaid: ['ຍັງບໍ່ຈ່າຍ', 'p-bad'], partial: ['ຈ່າຍບາງສ່ວນ', 'p-warn'], paid: ['ຈ່າຍຄົບ', 'p-ok'] };
+  function siFilter(st) { SF.st = st; renderSupInv(); }
+  function filteredSupInv() {
+    var fr = $('rtSiF').value, to = $('rtSiT').value, sp = $('rtSiSup').value, site = $('rtSiSite').value;
+    return (S.d.invoices || []).filter(function (i) {
+      if (fr && i.month < fr) return false;
+      if (to && i.month > to) return false;
+      if (sp && i.supplierId !== sp) return false;
+      if (site && ct(i.contractId).site !== site) return false;
+      return true;
+    });
+  }
+  function renderSupInv() {
+    if (!S.d) return;
+    var base = filteredSupInv(), cnt = {};
+    base.forEach(function (i) { var s = siState(i); cnt[s] = (cnt[s] || 0) + 1; });
+    var chips = [['open', 'ຍັງຈ່າຍບໍ່ຄົບ', (cnt.unpaid || 0) + (cnt.partial || 0)], ['unpaid', 'ຍັງບໍ່ຈ່າຍ', cnt.unpaid || 0], ['partial', 'ຈ່າຍບາງສ່ວນ', cnt.partial || 0], ['paid', 'ຈ່າຍຄົບ', cnt.paid || 0], ['', 'ທັງໝົດ', base.length]];
+    $('rtSiChips').innerHTML = chips.map(function (c) { return '<button type="button" class="' + (SF.st === c[0] ? 'on' : '') + '" onclick="RT.siFilter(\'' + c[0] + '\')">' + c[1] + '<b>' + c[2] + '</b></button>'; }).join('');
+    var list = base.filter(function (i) { var s = siState(i); return !SF.st || (SF.st === 'open' ? s !== 'paid' : s === SF.st); })
+      .sort(function (a, b) { return a.month === b.month ? (a.id < b.id ? 1 : -1) : (a.month < b.month ? 1 : -1); });
+    $('rtSiCount').innerHTML = '<i class="bi bi-file-earmark-ruled"></i> ໃບແຈ້ງໜີ້ຜູ້ໃຫ້ເຊົ່າ (' + list.length + ')';
+    var payE = lvl('payments') === 'edit', tN = 0, tP = 0;
+    $('rtSiBody').innerHTML = list.length ? list.map(function (i) {
+      var c = ct(i.contractId), p = paidOf(i.id), o = Math.max(0, Number(i.netLAK) - p), s = siState(i);
+      tN += Number(i.netLAK || 0); tP += p;
+      return '<tr><td><b>' + esc(i.id) + '</b><div class="rt-mini">' + lm(i.month) + '</div></td><td>' + esc(c.plate) + '<div class="rt-mini">' + esc(c.vehicle || '') + (c.contractNo ? ' · ' + esc(c.contractNo) : '') + '</div></td>' +
+        '<td>' + esc(sup(i.supplierId).name) + '</td><td>' + esc(c.site || '') + '</td><td class="n">' + fmt(i.netLAK) + '</td><td class="n">' + fmt(p) + '</td><td class="n">' + (o > 0.5 ? '<b>' + fmt(o) + '</b>' : '-') + '</td>' +
+        '<td>' + pill(SIST[s]) + '</td><td style="white-space:nowrap"><button class="btn btn-sm btn-outline-secondary py-0 px-2" title="ພິມ" aria-label="ພິມ" onclick="RT.printInvoice(\'' + esc(i.id) + '\')"><i class="bi bi-printer"></i></button>' +
+        (payE && o > 0.5 ? ' <button class="btn btn-sm btn-success py-0 px-2" onclick="RT.payInvoice(\'' + esc(i.id) + '\')">ຈ່າຍ</button>' : '') + '</td></tr>';
+    }).join('') : '<tr><td colspan="9" class="rt-mini">' + ((S.d.invoices || []).length ? 'ບໍ່ມີໃບແຈ້ງໜີ້ຕາມເງື່ອນໄຂ.' : 'ຍັງບໍ່ມີໃບແຈ້ງໜີ້ — ສ້າງໄດ້ໃນໜ້າ "ຄິດໄລ່ຄ່າເຊົ່າ".') + '</td></tr>';
+    $('rtSiFoot').innerHTML = list.length ? '<tr><th colspan="4">ລວມ</th><th class="n">' + fmt(tN) + '</th><th class="n">' + fmt(tP) + '</th><th class="n">' + fmt(Math.max(0, tN - tP)) + '</th><th colspan="2"></th></tr>' : '';
+  }
+  function exportSupInv() {
+    var r = [['ເລກທີ', 'ເດືອນ', 'ທະບຽນລົດ', 'ລົດ', 'ສັນຍາ', 'ຜູ້ໃຫ້ເຊົ່າ', 'ສະໜາມ', 'ຈຳນວນຄິດເງິນ', 'ໜ່ວຍ', 'ຄ່າເຊົ່າ(ກີບ)', 'ຫັກມື້ເສຍ', 'ຫັກນ້ຳມັນ', 'ຍອດຕ້ອງຈ່າຍ(ກີບ)', 'ຈ່າຍແລ້ວ', 'ຄ້າງ', 'ສະຖານະ']];
+    filteredSupInv().forEach(function (i) { var c = ct(i.contractId), p = paidOf(i.id); r.push([i.id, lm(i.month), c.plate, c.vehicle, c.contractNo, sup(i.supplierId).name, c.site, i.qty, i.unit, i.grossLAK, i.breakdownLAK, i.fuelLAK, i.netLAK, p, Math.max(0, i.netLAK - p), SIST[siState(i)][0]]); });
+    var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(r), 'ໃບແຈ້ງໜີ້ຜູ້ໃຫ້ເຊົ່າ');
+    XLSX.writeFile(wb, 'Supplier_Invoices_' + today() + '.xlsx');
+  }
+
   function reset() { S.d = null; }
-  return { reset: reset, quickType: quickType, quickSupplier: quickSupplier, quickContract: quickContract, open: open, reload: reload, submit: submit, edit: edit, del: del, resetForm: resetForm, ctHints: ctHints,
+  return { newBill: newBill, billAddItem: billAddItem, billCalc: billCalc, billPull: billPull, saveBill: saveBill, editBill: editBill, cancelBill: cancelBill, receive: receive,
+    quickCustomer: quickCustomer, bFilter: bFilter, renderBills: renderBills, exportBills: exportBills, printBill: printBill, printReceipt: printReceipt,
+    siFilter: siFilter, renderSupInv: renderSupInv, exportSupInv: exportSupInv,
+    reset: reset, quickType: quickType, quickSupplier: quickSupplier, quickContract: quickContract, open: open, reload: reload, submit: submit, edit: edit, del: del, resetForm: resetForm, ctHints: ctHints,
     lgContract: lgContract, lgHours: lgHours, lgPull: lgPull, renderContracts: renderContracts, renderLogs: renderLogs,
     compute: compute, blAll: blAll, saveInvoices: saveInvoices, pmInvoice: pmInvoice, payInvoice: payInvoice,
     renderReport: renderReport, exportExcel: exportExcel, printReport: printReport, printInvoice: printInvoice };
